@@ -28,10 +28,16 @@ async function build() {
   });
 
   // Generate type definitions
-  await $`tsc --emitDeclarationOnly --declaration --outDir dist`;
+  await $`tsc --project tsconfig.build.json`;
 
   // Make CLI executable
   await $`chmod +x dist/cli.js`;
+
+  // Replace Bun shebang with Node.js shebang for compatibility
+  const cliContent = await Bun.file("dist/cli.js").text();
+  const nodeShebang = "#!/usr/bin/env node\n";
+  const updatedContent = cliContent.replace(/^#!.*\n/, nodeShebang);
+  await Bun.write("dist/cli.js", updatedContent);
 
   console.log("✓ Build completed successfully");
 }
