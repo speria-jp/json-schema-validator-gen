@@ -1,7 +1,15 @@
 {
-  "name": "json-schema-validator-gen",
+  "name": "@speria-jp/json-schema-validator-gen",
   "version": "0.1.0",
   "description": "A lightweight JSON Schema validator generator that creates minimal TypeScript code and type definitions",
+  "homepage": "https://github.com/speria-jp/json-schema-validator-gen",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/speria-jp/json-schema-validator-gen.git"
+  },
+  "bugs": {
+    "url": "https://github.com/speria-jp/json-schema-validator-gen/issues"
+  },
   "type": "module",
   "module": "src/index.ts",
   "main": "dist/index.js",
@@ -32,7 +40,10 @@
     "lightweight",
     "type-safe"
   ],
-  "author": "",
+  "author": "Speria Inc.",
+  "publishConfig": {
+    "access": "public"
+  },
   "license": "MIT",
   "devDependencies": {
     "@biomejs/biome": "2.0.5",
