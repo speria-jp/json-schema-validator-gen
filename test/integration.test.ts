@@ -6,8 +6,24 @@ import { join } from "node:path";
 const generatedDir = join(__dirname, "..", "examples", "generated");
 
 describe("Generated code snapshots", () => {
-  // Generate validators before running tests
-  execSync("bun run scripts/generate-examples.ts", {
+  // Generate validators using CLI before running tests
+  const cliPath = join(__dirname, "..", "src", "cli.ts");
+  const examplesDir = join(__dirname, "..", "examples");
+  
+  // Generate user-validator
+  execSync(`bun run ${cliPath} -s ${join(examplesDir, "user-schema.json")} -o ${join(generatedDir, "user-validator.ts")} -t User -v validateUser`, {
+    stdio: "pipe",
+    cwd: join(__dirname, ".."),
+  });
+  
+  // Generate complex-validator
+  execSync(`bun run ${cliPath} -s ${join(examplesDir, "complex-schema.json")} -o ${join(generatedDir, "complex-validator.ts")} -t Complex -v validateComplex`, {
+    stdio: "pipe",
+    cwd: join(__dirname, ".."),
+  });
+  
+  // Generate ref-validator
+  execSync(`bun run ${cliPath} -s ${join(examplesDir, "ref-schema.json")} -o ${join(generatedDir, "ref-validator.ts")} -t Ref -v validateRef`, {
     stdio: "pipe",
     cwd: join(__dirname, ".."),
   });
@@ -38,8 +54,22 @@ describe("Generated code snapshots", () => {
 });
 
 describe("TypeScript type checking tests", () => {
-  // Generate validators before running type check tests
-  execSync("bun run scripts/generate-examples.ts", {
+  // Generate validators using CLI before running type check tests
+  const cliPath = join(__dirname, "..", "src", "cli.ts");
+  const examplesDir = join(__dirname, "..", "examples");
+  
+  // Generate all validators
+  execSync(`bun run ${cliPath} -s ${join(examplesDir, "user-schema.json")} -o ${join(generatedDir, "user-validator.ts")} -t User -v validateUser`, {
+    stdio: "pipe",
+    cwd: join(__dirname, ".."),
+  });
+  
+  execSync(`bun run ${cliPath} -s ${join(examplesDir, "complex-schema.json")} -o ${join(generatedDir, "complex-validator.ts")} -t Complex -v validateComplex`, {
+    stdio: "pipe",
+    cwd: join(__dirname, ".."),
+  });
+  
+  execSync(`bun run ${cliPath} -s ${join(examplesDir, "ref-schema.json")} -o ${join(generatedDir, "ref-validator.ts")} -t Ref -v validateRef`, {
     stdio: "pipe",
     cwd: join(__dirname, ".."),
   });

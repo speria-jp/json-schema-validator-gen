@@ -29,9 +29,6 @@ bun run lint:fix
 
 # Development mode (run CLI locally)
 bun run dev
-
-# Generate examples
-bun run generate:examples
 ```
 
 ## Project Architecture

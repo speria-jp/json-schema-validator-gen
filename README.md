@@ -166,9 +166,6 @@ bun run build
 # Run tests
 bun test
 
-# Generate examples
-bun run generate:examples
-
 # Type checking
 bun run typecheck
 
