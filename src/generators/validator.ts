@@ -150,6 +150,7 @@ export function generateValidator(
     omitTrailingSemicolon: options.minify || false,
   });
 
+  // Don't add header - it will be added in combineOutput
   return printer.printFile(sourceFile);
 }
 

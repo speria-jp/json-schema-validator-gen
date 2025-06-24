@@ -11,6 +11,7 @@ import {
 import { generateTypeScript } from "./generators/typescript";
 import { generateValidator } from "./generators/validator";
 import type { GenerateOptions, GenerateResult } from "./types";
+import { getGeneratedHeader } from "./utils/header";
 
 export async function generate(
   options: GenerateOptions,
@@ -65,7 +66,8 @@ function combineOutput(
   validatorCode: string,
   _options: { exportType: "named" | "default" },
 ): string {
-  return `${typeDefinition}
+  // Add header only once at the top
+  return `${getGeneratedHeader()}${typeDefinition}
 
 ${validatorCode}`;
 }

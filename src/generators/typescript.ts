@@ -49,11 +49,7 @@ export function generateTypeScript(
 
   const result = printer.printFile(sourceFile);
 
-  // Add comment for non-namespace exports
-  if (!options.namespace) {
-    return `// Auto-generated type definition\n${result}`;
-  }
-
+  // Don't add header - it will be added in combineOutput
   return result;
 }
 
