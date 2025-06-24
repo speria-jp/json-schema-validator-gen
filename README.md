@@ -166,7 +166,7 @@ export function validateUser(value: unknown): value is User {
 - **Array validation**: items schema validation
 - **Enums and const values**: Full enum support
 - **Union types**: oneOf, anyOf (limited support)
-- **References**: $ref (limited support)
+- **References**: $ref support for local definitions (#/definitions/)
 - **Optional properties**: Proper handling of required vs optional fields
 
 ## Development
