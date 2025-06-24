@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit",
     "prepare": "bun run build",
     "generate:examples": "bun run scripts/generate-examples.ts",
-    "test:snapshots": "bun test test/snapshots.test.ts",
+    "test:integration": "bun test test/integration.test.ts",
     "lint": "bunx biome check .",
     "lint:fix": "bunx biome check --write ."
   },

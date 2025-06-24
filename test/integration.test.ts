@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 const generatedDir = join(__dirname, "..", "examples", "generated");
 
-describe("Snapshot tests", () => {
+describe("Generated code snapshots", () => {
   // Generate validators before running tests
   execSync("bun run scripts/generate-examples.ts", {
     stdio: "pipe",

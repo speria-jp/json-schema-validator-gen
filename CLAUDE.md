@@ -17,8 +17,8 @@ bun test
 # Run a specific test file
 bun test test/generator.test.ts
 
-# Run snapshot tests
-bun run test:snapshots
+# Run integration tests (snapshots + type checking)
+bun run test:integration
 
 # Type checking
 bun run typecheck
@@ -64,7 +64,7 @@ This is a JSON Schema validator generator that creates TypeScript type definitio
 ### Testing Strategy
 
 - **Unit Tests** (`test/generator.test.ts`): Test core functionality
-- **Snapshot Tests** (`test/snapshots.test.ts`): Ensure generated code consistency
+- **Integration Tests** (`test/integration.test.ts`): Ensure generated code consistency and TypeScript compatibility
 - Uses Bun's built-in test runner
 
 ### Supported JSON Schema Features
