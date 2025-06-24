@@ -943,6 +943,81 @@ describe("generate", () => {
     expect(result.typeDefinition).toContain("name?: string;");
   });
 
+  test("should handle pattern with forward slashes", async () => {
+    const schema = {
+      type: "object",
+      properties: {
+        url: {
+          type: "string",
+          pattern: "^https://[a-zA-Z0-9.-]+\\.[a-z]{2,}/.*$",
+        },
+        path: {
+          type: "string",
+          pattern: "^/usr/local/bin/[^/]+$",
+        },
+        date: {
+          type: "string",
+          pattern: "^\\d{4}/\\d{2}/\\d{2}$",
+        },
+      },
+    };
+
+    await writeFile(schemaPath, JSON.stringify(schema));
+
+    const result = await generate({
+      schemaPath,
+      outputPath,
+      typeName: "PatternTest",
+    });
+
+    // Check that patterns are properly escaped in generated code
+    expect(result.validatorCode).toContain("\\/"); // Escaped forward slash
+    expect(result.validatorCode).toContain("test(value.url)");
+    expect(result.validatorCode).toContain("test(value.path)");
+    expect(result.validatorCode).toContain("test(value.date)");
+  });
+
+  test("should skip invalid regex patterns", async () => {
+    const originalWarn = console.warn;
+    const warnings: string[] = [];
+    console.warn = (msg: string) => warnings.push(msg);
+
+    const schema = {
+      type: "object",
+      properties: {
+        valid: {
+          type: "string",
+          pattern: "^[a-z]+$",
+        },
+        invalid: {
+          type: "string",
+          pattern: "[", // Invalid regex
+        },
+      },
+    };
+
+    await writeFile(schemaPath, JSON.stringify(schema));
+
+    const result = await generate({
+      schemaPath,
+      outputPath,
+      typeName: "InvalidPatternTest",
+    });
+
+    // Valid pattern should be included
+    expect(result.validatorCode).toContain("test(value.valid)");
+
+    // Invalid pattern should be skipped
+    expect(result.validatorCode).not.toContain("test(value.invalid)");
+
+    // Warning should be logged
+    expect(warnings.some((w) => w.includes("Invalid regex pattern"))).toBe(
+      true,
+    );
+
+    console.warn = originalWarn;
+  });
+
   test("should handle complex $ref with definitions vs $defs", async () => {
     const schema = {
       $schema: "http://json-schema.org/draft-07/schema#",

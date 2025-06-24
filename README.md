@@ -169,6 +169,10 @@ export function validateUser(value: unknown): value is User {
 - **References**: $ref support for local definitions (#/definitions/ and #/$defs/)
 - **Optional properties**: Proper handling of required vs optional fields
 
+## Security Considerations
+
+For general security considerations when working with JSON Schema validation, please refer to the [Ajv Security Guidelines](https://github.com/ajv-validator/ajv/blob/master/docs/security.md). While this tool generates code at build time rather than runtime, many of the same principles apply regarding input validation and schema design.
+
 ## Development
 
 ```bash

@@ -667,19 +667,32 @@ function addStringConstraints(
   }
 
   if (schema.pattern) {
-    const regex = factory.createRegularExpressionLiteral(`/${schema.pattern}/`);
-    statements.push(
-      createReturnFalseIf(
-        factory.createPrefixUnaryExpression(
-          ts.SyntaxKind.ExclamationToken,
-          factory.createCallExpression(
-            factory.createPropertyAccessExpression(regex, "test"),
-            undefined,
-            [value],
+    try {
+      // Validate pattern at build time
+      new RegExp(schema.pattern);
+
+      // Escape forward slashes for regex literal
+      const escapedPattern = schema.pattern.replace(/\//g, "\\/");
+      const regex = factory.createRegularExpressionLiteral(
+        `/${escapedPattern}/`,
+      );
+
+      statements.push(
+        createReturnFalseIf(
+          factory.createPrefixUnaryExpression(
+            ts.SyntaxKind.ExclamationToken,
+            factory.createCallExpression(
+              factory.createPropertyAccessExpression(regex, "test"),
+              undefined,
+              [value],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    } catch (error) {
+      // Invalid regex pattern - skip validation
+      console.warn(`Invalid regex pattern in schema: ${schema.pattern}`);
+    }
   }
 }
 
