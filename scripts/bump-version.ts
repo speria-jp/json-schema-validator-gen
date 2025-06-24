@@ -44,6 +44,9 @@ await Bun.write(
   JSON.stringify(Object.assign(json, { version: desired }), null, 2),
 );
 
+// Run lint:fix to ensure proper formatting
+await $`bun run lint:fix ${path}`;
+
 await $`git add ${path}`;
 await $`git commit -m v${desired}`;
 await $`git tag v${desired}`;
