@@ -1,0 +1,62 @@
+// Auto-generated type definition
+export type User = {
+    id: number;
+    name: string;
+    email: string;
+    age?: number;
+    tags?: string[];
+    role?: "admin" | "user" | "guest";
+};
+
+
+export function validateUser(value: unknown): value is User {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+        return false;
+    if (!("id" in value && "name" in value && "email" in value))
+        return false;
+    if (typeof value.id !== "number")
+        return false;
+    if (!Number.isInteger(value.id))
+        return false;
+    if (value.id < 1)
+        return false;
+    if (typeof value.name !== "string")
+        return false;
+    if (value.name.length < 1)
+        return false;
+    if (value.name.length > 100)
+        return false;
+    if (typeof value.email !== "string")
+        return false;
+    if (!/^[\w.-]+@[\w.-]+\.[a-z]{2,}$/.test(value.email))
+        return false;
+    if ("age" in value) {
+        if (typeof value.age !== "number")
+            return false;
+        if (!Number.isInteger(value.age))
+            return false;
+        if (value.age < 0)
+            return false;
+        if (value.age > 150)
+            return false;
+    }
+    if ("tags" in value) {
+        if (!Array.isArray(value.tags))
+            return false;
+        for (const item of value.tags) {
+            if (typeof item !== "string")
+                return false;
+        }
+    }
+    if ("role" in value) {
+        if (typeof value.role !== "string")
+            return false;
+        if (!["admin", "user", "guest"].includes(value.role))
+            return false;
+    }
+    for (const key in value) {
+        if (!["id", "name", "email", "age", "tags", "role"].includes(key))
+            return false;
+    }
+    return true;
+}

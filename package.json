@@ -1,12 +1,47 @@
 {
   "name": "json-schema-validator-gen",
-  "module": "index.ts",
+  "version": "0.1.0",
+  "description": "A lightweight JSON Schema validator generator that creates minimal TypeScript code and type definitions",
   "type": "module",
-  "private": true,
+  "module": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "json-schema-validator-gen": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun build.ts",
+    "test": "bun test",
+    "dev": "bun run src/cli.ts",
+    "typecheck": "tsc --noEmit",
+    "prepare": "bun run build",
+    "generate:examples": "bun run scripts/generate-examples.ts",
+    "test:snapshots": "bun test test/snapshots.test.ts",
+    "lint": "bunx biome check .",
+    "lint:fix": "bunx biome check --write ."
+  },
+  "keywords": [
+    "json-schema",
+    "validator",
+    "typescript",
+    "code-generation",
+    "lightweight",
+    "type-safe"
+  ],
+  "author": "",
+  "license": "MIT",
   "devDependencies": {
-    "@types/bun": "latest"
+    "@biomejs/biome": "2.0.5",
+    "@types/bun": "latest",
+    "@types/node": "^24.0.3"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "json-schema-library": "^10.1.2"
   }
 }

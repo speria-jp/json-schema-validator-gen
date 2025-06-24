@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Product",
+  "type": "object",
+  "required": ["id", "name", "price"],
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "price": {
+      "type": "number",
+      "minimum": 0,
+      "exclusiveMaximum": 1000000
+    },
+    "discount": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "maxItems": 10,
+      "uniqueItems": true
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "manufacturer": {
+          "type": "string"
+        },
+        "warranty": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "minProperties": 1,
+      "maxProperties": 5,
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "enum": ["available", "out-of-stock", "discontinued"]
+    },
+    "variants": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/variant"
+      }
+    }
+  },
+  "definitions": {
+    "variant": {
+      "type": "object",
+      "required": ["sku", "attributes"],
+      "properties": {
+        "sku": {
+          "type": "string",
+          "pattern": "^[A-Z0-9]{6,}$"
+        },
+        "attributes": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,247 @@
+// Bun Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Snapshot tests user-validator.ts snapshot 1`] = `
+"// Auto-generated type definition
+export type User = {
+    id: number;
+    name: string;
+    email: string;
+    age?: number;
+    tags?: string[];
+    role?: "admin" | "user" | "guest";
+};
+
+
+export function validateUser(value: unknown): value is User {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+        return false;
+    if (!("id" in value && "name" in value && "email" in value))
+        return false;
+    if (typeof value.id !== "number")
+        return false;
+    if (!Number.isInteger(value.id))
+        return false;
+    if (value.id < 1)
+        return false;
+    if (typeof value.name !== "string")
+        return false;
+    if (value.name.length < 1)
+        return false;
+    if (value.name.length > 100)
+        return false;
+    if (typeof value.email !== "string")
+        return false;
+    if (!/^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/.test(value.email))
+        return false;
+    if ("age" in value) {
+        if (typeof value.age !== "number")
+            return false;
+        if (!Number.isInteger(value.age))
+            return false;
+        if (value.age < 0)
+            return false;
+        if (value.age > 150)
+            return false;
+    }
+    if ("tags" in value) {
+        if (!Array.isArray(value.tags))
+            return false;
+        for (const item of value.tags) {
+            if (typeof item !== "string")
+                return false;
+        }
+    }
+    if ("role" in value) {
+        if (typeof value.role !== "string")
+            return false;
+        if (!["admin", "user", "guest"].includes(value.role))
+            return false;
+    }
+    for (const key in value) {
+        if (!["id", "name", "email", "age", "tags", "role"].includes(key))
+            return false;
+    }
+    return true;
+}
+"
+`;
+
+exports[`Snapshot tests complex-validator.ts snapshot 1`] = `
+"// Auto-generated type definition
+export type Complex = {
+    id: number;
+    name: string;
+    price: number;
+    discount?: number;
+    tags?: string[];
+    metadata?: {
+        manufacturer?: string;
+        warranty?: number;
+    };
+    status?: "available" | "out-of-stock" | "discontinued";
+    variants?: {
+        sku: string;
+        attributes: Record<string, unknown>;
+    }[];
+};
+
+
+export function validateComplex(value: unknown): value is Complex {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+        return false;
+    if (!("id" in value && "name" in value && "price" in value))
+        return false;
+    if (typeof value.id !== "number")
+        return false;
+    if (!Number.isInteger(value.id))
+        return false;
+    if (value.id < 1)
+        return false;
+    if (typeof value.name !== "string")
+        return false;
+    if (value.name.length < 1)
+        return false;
+    if (value.name.length > 100)
+        return false;
+    if (typeof value.price !== "number")
+        return false;
+    if (value.price < 0)
+        return false;
+    if (value.price >= 1000000)
+        return false;
+    if ("discount" in value) {
+        if (typeof value.discount !== "number")
+            return false;
+        if (value.discount < 0)
+            return false;
+        if (value.discount > 100)
+            return false;
+    }
+    if ("tags" in value) {
+        if (!Array.isArray(value.tags))
+            return false;
+        if (value.tags.length < 1)
+            return false;
+        if (value.tags.length > 10)
+            return false;
+        if (new Set(value.tags).size !== value.tags.length)
+            return false;
+        for (const item of value.tags) {
+            if (typeof item !== "string")
+                return false;
+        }
+    }
+    if ("metadata" in value) {
+        if (typeof value.metadata !== "object" || value.metadata === null || Array.isArray(value.metadata))
+            return false;
+        if (Object.keys(value.metadata).length < 1)
+            return false;
+        if (Object.keys(value.metadata).length > 5)
+            return false;
+        if ("manufacturer" in value.metadata) {
+            if (typeof value.metadata.manufacturer !== "string")
+                return false;
+        }
+        if ("warranty" in value.metadata) {
+            if (typeof value.metadata.warranty !== "number")
+                return false;
+            if (!Number.isInteger(value.metadata.warranty))
+                return false;
+            if (value.metadata.warranty < 0)
+                return false;
+        }
+    }
+    if ("status" in value) {
+        if (typeof value.status !== "string")
+            return false;
+        if (!["available", "out-of-stock", "discontinued"].includes(value.status))
+            return false;
+    }
+    if ("variants" in value) {
+        if (!Array.isArray(value.variants))
+            return false;
+        for (const item of value.variants) {
+            if (typeof item !== "object" || item === null || Array.isArray(item))
+                return false;
+            if (!("sku" in item && "attributes" in item))
+                return false;
+            if (typeof item.sku !== "string")
+                return false;
+            if (!/^[A-Z0-9]{6,}$/.test(item.sku))
+                return false;
+            if (typeof item.attributes !== "object" || item.attributes === null || Array.isArray(item.attributes))
+                return false;
+        }
+    }
+    for (const key in value) {
+        if (!["id", "name", "price", "discount", "tags", "metadata", "status", "variants"].includes(key))
+            return false;
+    }
+    return true;
+}
+"
+`;
+
+exports[`Snapshot tests ref-validator.ts snapshot 1`] = `
+"// Auto-generated type definition
+export type Ref = {
+    id: number;
+    name: string;
+    address: {
+        street: string;
+        city: string;
+        zipCode?: string;
+    };
+    workAddress?: {
+        street: string;
+        city: string;
+        zipCode?: string;
+    };
+};
+
+
+export function validateRef(value: unknown): value is Ref {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+        return false;
+    if (!("id" in value && "name" in value && "address" in value))
+        return false;
+    if (typeof value.id !== "number")
+        return false;
+    if (!Number.isInteger(value.id))
+        return false;
+    if (typeof value.name !== "string")
+        return false;
+    if (typeof value.address !== "object" || value.address === null || Array.isArray(value.address))
+        return false;
+    if (!("street" in value.address && "city" in value.address))
+        return false;
+    if (typeof value.address.street !== "string")
+        return false;
+    if (typeof value.address.city !== "string")
+        return false;
+    if ("zipCode" in value.address) {
+        if (typeof value.address.zipCode !== "string")
+            return false;
+        if (!/^\\d{5}$/.test(value.address.zipCode))
+            return false;
+    }
+    if ("workAddress" in value) {
+        if (typeof value.workAddress !== "object" || value.workAddress === null || Array.isArray(value.workAddress))
+            return false;
+        if (!("street" in value.workAddress && "city" in value.workAddress))
+            return false;
+        if (typeof value.workAddress.street !== "string")
+            return false;
+        if (typeof value.workAddress.city !== "string")
+            return false;
+        if ("zipCode" in value.workAddress) {
+            if (typeof value.workAddress.zipCode !== "string")
+                return false;
+            if (!/^\\d{5}$/.test(value.workAddress.zipCode))
+                return false;
+        }
+    }
+    return true;
+}
+"
+`;
