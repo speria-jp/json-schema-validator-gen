@@ -58,3 +58,9 @@ export function validateRef(value: unknown): value is Ref {
     }
     return true;
 }
+export function unsafeValidateRef(value: unknown): Ref {
+    if (!validateRef(value)) {
+        throw new Error("Validation failed: value is not Ref");
+    }
+    return value as Ref;
+}

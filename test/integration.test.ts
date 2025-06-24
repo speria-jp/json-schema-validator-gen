@@ -138,12 +138,15 @@ describe("Runtime validation tests", () => {
 
   describe("User validator", () => {
     let validateUser: (value: unknown) => boolean;
+    // biome-ignore lint/suspicious/noExplicitAny: User type is imported dynamically
+    let unsafeValidateUser: (value: unknown) => any;
 
     test("setup", async () => {
       const userValidator = await import(
         join(generatedDir, "user-validator.ts")
       );
       validateUser = userValidator.validateUser;
+      unsafeValidateUser = userValidator.unsafeValidateUser;
     });
 
     test("validates valid user objects", () => {
@@ -216,16 +219,47 @@ describe("Runtime validation tests", () => {
         expect(validateUser(user)).toBe(false);
       }
     });
+
+    test("unsafeValidateUser returns value for valid objects", () => {
+      const validUser = {
+        id: 1,
+        name: "John Doe",
+        email: "john@example.com",
+      };
+
+      const result = unsafeValidateUser(validUser);
+      expect(result).toEqual(validUser);
+      expect(result).toBe(validUser); // Should be the same reference
+    });
+
+    test("unsafeValidateUser throws for invalid objects", () => {
+      const invalidUsers = [
+        { id: 1, name: "John" }, // missing email
+        { id: "1", name: "John", email: "john@example.com" }, // invalid id type
+        null,
+        undefined,
+        "string",
+      ];
+
+      for (const user of invalidUsers) {
+        expect(() => unsafeValidateUser(user)).toThrow(
+          "Validation failed: value is not User",
+        );
+      }
+    });
   });
 
   describe("Complex validator", () => {
     let validateComplex: (value: unknown) => boolean;
+    // biome-ignore lint/suspicious/noExplicitAny: Complex type is imported dynamically
+    let unsafeValidateComplex: (value: unknown) => any;
 
     test("setup", async () => {
       const complexValidator = await import(
         join(generatedDir, "complex-validator.ts")
       );
       validateComplex = complexValidator.validateComplex;
+      unsafeValidateComplex = complexValidator.unsafeValidateComplex;
     });
 
     test("validates valid complex objects", () => {
@@ -301,6 +335,33 @@ describe("Runtime validation tests", () => {
 
       for (const obj of invalidObjects) {
         expect(validateComplex(obj)).toBe(false);
+      }
+    });
+
+    test("unsafeValidateComplex returns value for valid objects", () => {
+      const validObject = {
+        id: 1,
+        name: "Product 1",
+        price: 99.99,
+      };
+
+      const result = unsafeValidateComplex(validObject);
+      expect(result).toEqual(validObject);
+      expect(result).toBe(validObject); // Should be the same reference
+    });
+
+    test("unsafeValidateComplex throws for invalid objects", () => {
+      const invalidObjects = [
+        { id: 1, name: "Product" }, // missing price
+        { id: 1, name: "Product", price: -1 }, // invalid price
+        null,
+        undefined,
+      ];
+
+      for (const obj of invalidObjects) {
+        expect(() => unsafeValidateComplex(obj)).toThrow(
+          "Validation failed: value is not Complex",
+        );
       }
     });
   });

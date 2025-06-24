@@ -55,18 +55,87 @@ export function generateValidator(
     functionBody,
   );
 
+  // Create unsafe validator function
+  const unsafeValidatorName = `unsafe${validatorName.charAt(0).toUpperCase() + validatorName.slice(1)}`;
+
+  // Create parameter for unsafe validator
+  const unsafeParameter = factory.createParameterDeclaration(
+    undefined,
+    undefined,
+    "value",
+    undefined,
+    factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword),
+  );
+
+  // Create return type for unsafe validator
+  const unsafeReturnType = factory.createTypeReferenceNode(typeName, undefined);
+
+  // Create unsafe validator body
+  const unsafeStatements: ts.Statement[] = [
+    // if (!validateXXX(value)) throw new Error(...)
+    factory.createIfStatement(
+      factory.createPrefixUnaryExpression(
+        ts.SyntaxKind.ExclamationToken,
+        factory.createCallExpression(
+          factory.createIdentifier(validatorName),
+          undefined,
+          [factory.createIdentifier("value")],
+        ),
+      ),
+      factory.createBlock(
+        [
+          factory.createThrowStatement(
+            factory.createNewExpression(
+              factory.createIdentifier("Error"),
+              undefined,
+              [
+                factory.createStringLiteral(
+                  `Validation failed: value is not ${typeName}`,
+                ),
+              ],
+            ),
+          ),
+        ],
+        true,
+      ),
+    ),
+    // return value as TypeName
+    factory.createReturnStatement(
+      factory.createAsExpression(
+        factory.createIdentifier("value"),
+        factory.createTypeReferenceNode(typeName, undefined),
+      ),
+    ),
+  ];
+
+  const unsafeFunctionBody = factory.createBlock(unsafeStatements, true);
+
+  // Create unsafe function declaration
+  const unsafeFunctionDecl = factory.createFunctionDeclaration(
+    options.exportType === "named"
+      ? [factory.createModifier(ts.SyntaxKind.ExportKeyword)]
+      : undefined,
+    undefined,
+    unsafeValidatorName,
+    undefined,
+    [unsafeParameter],
+    unsafeReturnType,
+    unsafeFunctionBody,
+  );
+
   // Create source file
   const sourceFileStatements: ts.Statement[] =
     options.exportType === "default"
       ? [
           functionDecl,
+          unsafeFunctionDecl,
           factory.createExportAssignment(
             undefined,
             undefined,
             factory.createIdentifier(validatorName),
           ),
         ]
-      : [functionDecl];
+      : [functionDecl, unsafeFunctionDecl];
 
   const sourceFile = factory.createSourceFile(
     sourceFileStatements,

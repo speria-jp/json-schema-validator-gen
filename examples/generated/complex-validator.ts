@@ -110,3 +110,9 @@ export function validateComplex(value: unknown): value is Complex {
     }
     return true;
 }
+export function unsafeValidateComplex(value: unknown): Complex {
+    if (!validateComplex(value)) {
+        throw new Error("Validation failed: value is not Complex");
+    }
+    return value as Complex;
+}

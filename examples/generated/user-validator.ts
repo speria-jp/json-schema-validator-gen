@@ -60,3 +60,9 @@ export function validateUser(value: unknown): value is User {
     }
     return true;
 }
+export function unsafeValidateUser(value: unknown): User {
+    if (!validateUser(value)) {
+        throw new Error("Validation failed: value is not User");
+    }
+    return value as User;
+}
