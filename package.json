@@ -18,7 +18,6 @@
     "dev": "bun run src/cli.ts",
     "typecheck": "tsc --noEmit",
     "prepare": "bun run build",
-    "test:integration": "bun test test/integration.test.ts",
     "lint": "bunx biome check .",
     "lint:fix": "bunx biome check --write ."
   },
