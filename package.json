@@ -27,7 +27,10 @@
     "typecheck": "tsc --noEmit",
     "prepare": "bun run build",
     "lint": "bunx biome check .",
-    "lint:fix": "bunx biome check --write ."
+    "lint:fix": "bunx biome check --write .",
+    "version:patch": "bun scripts/bump-version.ts patch",
+    "version:minor": "bun scripts/bump-version.ts minor",
+    "version:major": "bun scripts/bump-version.ts major"
   },
   "engines": {
     "bun": ">=1.2"
@@ -48,7 +51,8 @@
   "devDependencies": {
     "@biomejs/biome": "2.0.5",
     "@types/bun": "latest",
-    "@types/node": "^24.0.3"
+    "@types/node": "^24.0.3",
+    "semver": "^7.6.3"
   },
   "peerDependencies": {
     "typescript": "^5.8.3"
