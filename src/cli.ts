@@ -1,10 +1,10 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { parseArgs } from "node:util";
 import { generate } from "./generator";
 
 const { values } = parseArgs({
-  args: Bun.argv,
+  args: process.argv,
   options: {
     schema: {
       type: "string",
