@@ -21,6 +21,9 @@
     "lint": "bunx biome check .",
     "lint:fix": "bunx biome check --write ."
   },
+  "engines": {
+    "bun": ">=1.2"
+  },
   "keywords": [
     "json-schema",
     "validator",
