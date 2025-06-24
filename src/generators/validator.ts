@@ -56,7 +56,9 @@ export function generateValidator(
   );
 
   // Create unsafe validator function
-  const unsafeValidatorName = `unsafe${validatorName.charAt(0).toUpperCase() + validatorName.slice(1)}`;
+  const unsafeValidatorName = `unsafe${
+    validatorName.charAt(0).toUpperCase() + validatorName.slice(1)
+  }`;
 
   // Create parameter for unsafe validator
   const unsafeParameter = factory.createParameterDeclaration(
@@ -689,7 +691,7 @@ function addStringConstraints(
           ),
         ),
       );
-    } catch (error) {
+    } catch (_error) {
       // Invalid regex pattern - skip validation
       console.warn(`Invalid regex pattern in schema: ${schema.pattern}`);
     }
