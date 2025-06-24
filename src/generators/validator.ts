@@ -185,19 +185,26 @@ function generateChecks(
     }
 
     // Try alternative: manually parse the reference
-    if (schema.$ref.startsWith("#/definitions/")) {
-      const defName = schema.$ref.replace("#/definitions/", "");
+    if (
+      schema.$ref.startsWith("#/definitions/") ||
+      schema.$ref.startsWith("#/$defs/")
+    ) {
+      const defName = schema.$ref
+        .replace("#/definitions/", "")
+        .replace("#/$defs/", "");
 
       // Get the root schema and look for definitions
       const rootNode = node.getNodeRoot();
       const rootSchema = rootNode.schema;
 
-      if (rootSchema?.definitions?.[defName]) {
+      // Check both definitions and $defs for backward compatibility
+      const definition =
+        rootSchema?.definitions?.[defName] || rootSchema?.$defs?.[defName];
+
+      if (definition) {
         // Create a new node for this definition
         try {
-          const definitionNode = rootNode.compileSchema(
-            rootSchema.definitions[defName],
-          );
+          const definitionNode = rootNode.compileSchema(definition);
           generateChecks(definitionNode, valueExpr, statements, visited);
           return;
         } catch (_error) {

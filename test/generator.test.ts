@@ -864,6 +864,85 @@ describe("generate", () => {
     expect(result.validatorCode).toContain("typeof");
   });
 
+  test("should handle $defs references", async () => {
+    const schema = {
+      $schema: "https://json-schema.org/draft/2020-12/schema",
+      type: "object",
+      properties: {
+        homeAddress: { $ref: "#/$defs/address" },
+        workAddress: { $ref: "#/$defs/address" },
+      },
+      required: ["homeAddress"],
+      $defs: {
+        address: {
+          type: "object",
+          properties: {
+            street: { type: "string" },
+            city: { type: "string" },
+            zipCode: { type: "string", pattern: "^\\d{5}$" },
+          },
+          required: ["street", "city"],
+        },
+      },
+    };
+
+    await writeFile(schemaPath, JSON.stringify(schema));
+
+    const result = await generate({
+      schemaPath,
+      outputPath,
+      typeName: "PersonWithAddress",
+    });
+
+    expect(result.typeName).toBe("PersonWithAddress");
+    expect(result.typeDefinition).toContain(
+      "export type PersonWithAddress = {",
+    );
+    expect(result.typeDefinition).toContain("homeAddress:");
+    expect(result.typeDefinition).toContain("workAddress?:");
+    expect(result.typeDefinition).toContain("street: string;");
+    expect(result.typeDefinition).toContain("city: string;");
+    expect(result.typeDefinition).toContain("zipCode?: string;");
+    expect(result.validatorCode).toContain('"homeAddress" in value');
+    expect(result.validatorCode).toContain('"street" in');
+    expect(result.validatorCode).toContain('"city" in');
+  });
+
+  test("should handle mixed definitions and $defs", async () => {
+    const schema = {
+      type: "object",
+      properties: {
+        oldStyle: { $ref: "#/definitions/oldItem" },
+        newStyle: { $ref: "#/$defs/newItem" },
+      },
+      definitions: {
+        oldItem: {
+          type: "object",
+          properties: { id: { type: "number" } },
+        },
+      },
+      $defs: {
+        newItem: {
+          type: "object",
+          properties: { name: { type: "string" } },
+        },
+      },
+    };
+
+    await writeFile(schemaPath, JSON.stringify(schema));
+
+    const result = await generate({
+      schemaPath,
+      outputPath,
+      typeName: "MixedRefs",
+    });
+
+    expect(result.typeDefinition).toContain("oldStyle?:");
+    expect(result.typeDefinition).toContain("newStyle?:");
+    expect(result.typeDefinition).toContain("id?: number;");
+    expect(result.typeDefinition).toContain("name?: string;");
+  });
+
   test("should handle complex $ref with definitions vs $defs", async () => {
     const schema = {
       $schema: "http://json-schema.org/draft-07/schema#",
