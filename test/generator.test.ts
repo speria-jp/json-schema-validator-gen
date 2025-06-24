@@ -354,6 +354,41 @@ describe("generate", () => {
       "value: string | number | boolean;",
     );
     expect(result.validatorCode).toContain('"value" in value');
+    // Check that oneOf validation is generated
+    expect(result.validatorCode).toContain('typeof value.value !== "string"');
+    expect(result.validatorCode).toContain('typeof value.value !== "number"');
+    expect(result.validatorCode).toContain('typeof value.value !== "boolean"');
+  });
+
+  test("should handle anyOf union types", async () => {
+    const schema = {
+      type: "object",
+      properties: {
+        data: {
+          anyOf: [
+            { type: "string", minLength: 5 },
+            { type: "number", minimum: 100 },
+          ],
+        },
+      },
+      required: ["data"],
+    };
+
+    await writeFile(schemaPath, JSON.stringify(schema));
+
+    const result = await generate({
+      schemaPath,
+      outputPath,
+      typeName: "AnyOfValue",
+    });
+
+    expect(result.typeDefinition).toContain("data: string | number;");
+    expect(result.validatorCode).toContain('"data" in value');
+    // Check that anyOf validation is generated
+    expect(result.validatorCode).toContain('typeof value.data !== "string"');
+    expect(result.validatorCode).toContain("value.data.length < 5");
+    expect(result.validatorCode).toContain('typeof value.data !== "number"');
+    expect(result.validatorCode).toContain("value.data < 100");
   });
 
   test("should handle const values", async () => {

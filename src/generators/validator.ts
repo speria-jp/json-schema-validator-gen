@@ -256,6 +256,92 @@ function generateChecks(
     return;
   }
 
+  // Handle oneOf
+  if (schema.oneOf && node.oneOf) {
+    const conditions: ts.Expression[] = [];
+    node.oneOf.forEach((subNode) => {
+      const subStatements: ts.Statement[] = [];
+      const subVisited = new WeakSet<SchemaNode>();
+      generateChecks(subNode, valueExpr, subStatements, subVisited);
+      if (subStatements.length > 0) {
+        subStatements.push(factory.createReturnStatement(factory.createTrue()));
+        const iife = factory.createCallExpression(
+          factory.createParenthesizedExpression(
+            factory.createArrowFunction(
+              undefined,
+              undefined,
+              [],
+              undefined,
+              factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+              factory.createBlock(subStatements, true),
+            ),
+          ),
+          undefined,
+          [],
+        );
+        conditions.push(iife);
+      }
+    });
+    if (conditions.length > 0) {
+      const combined = conditions.reduce(
+        (acc: ts.Expression, cond: ts.Expression) =>
+          factory.createBinaryExpression(acc, ts.SyntaxKind.BarBarToken, cond),
+      );
+      statements.push(
+        createReturnFalseIf(
+          factory.createPrefixUnaryExpression(
+            ts.SyntaxKind.ExclamationToken,
+            factory.createParenthesizedExpression(combined),
+          ),
+        ),
+      );
+    }
+    return;
+  }
+
+  // Handle anyOf
+  if (schema.anyOf && node.anyOf) {
+    const conditions: ts.Expression[] = [];
+    node.anyOf.forEach((subNode) => {
+      const subStatements: ts.Statement[] = [];
+      const subVisited = new WeakSet<SchemaNode>();
+      generateChecks(subNode, valueExpr, subStatements, subVisited);
+      if (subStatements.length > 0) {
+        subStatements.push(factory.createReturnStatement(factory.createTrue()));
+        const iife = factory.createCallExpression(
+          factory.createParenthesizedExpression(
+            factory.createArrowFunction(
+              undefined,
+              undefined,
+              [],
+              undefined,
+              factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+              factory.createBlock(subStatements, true),
+            ),
+          ),
+          undefined,
+          [],
+        );
+        conditions.push(iife);
+      }
+    });
+    if (conditions.length > 0) {
+      const combined = conditions.reduce(
+        (acc: ts.Expression, cond: ts.Expression) =>
+          factory.createBinaryExpression(acc, ts.SyntaxKind.BarBarToken, cond),
+      );
+      statements.push(
+        createReturnFalseIf(
+          factory.createPrefixUnaryExpression(
+            ts.SyntaxKind.ExclamationToken,
+            factory.createParenthesizedExpression(combined),
+          ),
+        ),
+      );
+    }
+    return;
+  }
+
   // Handle type-specific validation
   const type = normalizeType(schema.type);
 
@@ -469,34 +555,28 @@ function generateChecks(
     }
 
     case "union":
-      // Handle oneOf
-      if (schema.oneOf && node.oneOf) {
+      // Handle type arrays like ["string", "null"]
+      if (Array.isArray(schema.type)) {
         const conditions: ts.Expression[] = [];
-        node.oneOf.forEach((subNode) => {
-          const subStatements: ts.Statement[] = [];
-          const subVisited = new WeakSet<SchemaNode>();
-          generateChecks(subNode, valueExpr, subStatements, subVisited);
-          if (subStatements.length > 0) {
-            subStatements.push(
-              factory.createReturnStatement(factory.createTrue()),
-            );
-            const iife = factory.createCallExpression(
-              factory.createParenthesizedExpression(
-                factory.createArrowFunction(
-                  undefined,
-                  undefined,
-                  [],
-                  undefined,
-                  factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                  factory.createBlock(subStatements, true),
-                ),
+        for (const t of schema.type) {
+          if (t === "null") {
+            conditions.push(
+              factory.createBinaryExpression(
+                valueExpr,
+                ts.SyntaxKind.EqualsEqualsEqualsToken,
+                factory.createNull(),
               ),
-              undefined,
-              [],
             );
-            conditions.push(iife);
+          } else {
+            conditions.push(
+              factory.createBinaryExpression(
+                factory.createTypeOfExpression(valueExpr),
+                ts.SyntaxKind.EqualsEqualsEqualsToken,
+                factory.createStringLiteral(t),
+              ),
+            );
           }
-        });
+        }
         if (conditions.length > 0) {
           const combined = conditions.reduce(
             (acc: ts.Expression, cond: ts.Expression) =>
@@ -516,7 +596,6 @@ function generateChecks(
           );
         }
       }
-      // Similar for anyOf...
       break;
   }
 }

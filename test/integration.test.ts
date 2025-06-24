@@ -287,6 +287,76 @@ describe("Runtime validation tests", () => {
             },
           ],
         },
+        // Test oneOf - standard shipping
+        {
+          id: 2,
+          name: "Product with Standard Shipping",
+          price: 49.99,
+          shippingMethod: {
+            type: "standard",
+            estimatedDays: 5,
+          },
+        },
+        // Test oneOf - express shipping
+        {
+          id: 3,
+          name: "Product with Express Shipping",
+          price: 149.99,
+          shippingMethod: {
+            type: "express",
+            guaranteedDate: "2025-12-25",
+          },
+        },
+        // Test anyOf - credit card payment
+        {
+          id: 4,
+          name: "Product with Credit Card",
+          price: 299.99,
+          paymentOptions: {
+            creditCard: {
+              lastFourDigits: "1234",
+              brand: "visa",
+            },
+          },
+        },
+        // Test anyOf - PayPal payment
+        {
+          id: 5,
+          name: "Product with PayPal",
+          price: 99.99,
+          paymentOptions: {
+            paypal: {
+              email: "user@example.com",
+            },
+          },
+        },
+        // Test anyOf - bank transfer payment
+        {
+          id: 6,
+          name: "Product with Bank Transfer",
+          price: 999.99,
+          paymentOptions: {
+            bankTransfer: {
+              accountNumber: "1234567890ABCD",
+            },
+          },
+        },
+        // Test both oneOf and anyOf together
+        {
+          id: 7,
+          name: "Product with Both Shipping and Payment",
+          price: 599.99,
+          shippingMethod: {
+            type: "express",
+            guaranteedDate: "2025-12-20",
+          },
+          paymentOptions: {
+            creditCard: {
+              lastFourDigits: "5678",
+              brand: "mastercard",
+            },
+          },
+        },
       ];
 
       for (const obj of validObjects) {
@@ -331,6 +401,95 @@ describe("Runtime validation tests", () => {
           variants: [{ sku: "abc", attributes: {} }],
         }, // invalid SKU pattern
         { id: 1, name: "Product", price: 100, variants: [{ sku: "ABC123" }] }, // missing attributes
+
+        // Invalid oneOf - missing required field
+        {
+          id: 8,
+          name: "Invalid Shipping - Missing Field",
+          price: 99.99,
+          shippingMethod: {
+            type: "standard",
+            // missing estimatedDays
+          },
+        },
+        // Invalid oneOf - wrong type value
+        {
+          id: 9,
+          name: "Invalid Shipping - Wrong Type",
+          price: 99.99,
+          shippingMethod: {
+            type: "overnight", // not a valid type
+            estimatedDays: 1,
+          },
+        },
+        // Invalid oneOf - out of range
+        {
+          id: 10,
+          name: "Invalid Shipping - Out of Range",
+          price: 99.99,
+          shippingMethod: {
+            type: "standard",
+            estimatedDays: 10, // max is 7
+          },
+        },
+        // Invalid oneOf - wrong date format
+        {
+          id: 11,
+          name: "Invalid Shipping - Wrong Date Format",
+          price: 99.99,
+          shippingMethod: {
+            type: "express",
+            guaranteedDate: "2025/12/25", // should be YYYY-MM-DD
+          },
+        },
+
+        // Invalid anyOf - missing required field
+        {
+          id: 12,
+          name: "Invalid Payment - Missing Field",
+          price: 99.99,
+          paymentOptions: {
+            creditCard: {
+              lastFourDigits: "1234",
+              // missing brand
+            },
+          },
+        },
+        // Invalid anyOf - wrong pattern
+        {
+          id: 13,
+          name: "Invalid Payment - Wrong Pattern",
+          price: 99.99,
+          paymentOptions: {
+            creditCard: {
+              lastFourDigits: "12345", // should be exactly 4 digits
+              brand: "visa",
+            },
+          },
+        },
+        // Invalid anyOf - invalid enum value
+        {
+          id: 14,
+          name: "Invalid Payment - Invalid Brand",
+          price: 99.99,
+          paymentOptions: {
+            creditCard: {
+              lastFourDigits: "1234",
+              brand: "discover", // not in enum
+            },
+          },
+        },
+        // Invalid anyOf - short account number
+        {
+          id: 15,
+          name: "Invalid Payment - Short Account",
+          price: 99.99,
+          paymentOptions: {
+            bankTransfer: {
+              accountNumber: "123456789", // min length is 10
+            },
+          },
+        },
       ];
 
       for (const obj of invalidObjects) {

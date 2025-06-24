@@ -16,6 +16,27 @@ export type Complex = {
         sku: string;
         attributes: Record<string, unknown>;
     }[];
+    shippingMethod?: {
+        type: "standard";
+        estimatedDays: number;
+    } | {
+        type: "express";
+        guaranteedDate: string;
+    };
+    paymentOptions?: {
+        creditCard: {
+            lastFourDigits: string;
+            brand: "visa" | "mastercard" | "amex";
+        };
+    } | {
+        paypal: {
+            email: string;
+        };
+    } | {
+        bankTransfer: {
+            accountNumber: string;
+        };
+    };
 };
 
 
@@ -106,8 +127,88 @@ export function validateComplex(value: unknown): value is Complex {
                 return false;
         }
     }
+    if ("shippingMethod" in value) {
+        if (!((() => {
+            if (typeof value.shippingMethod !== "object" || value.shippingMethod === null || Array.isArray(value.shippingMethod))
+                return false;
+            if (!("type" in value.shippingMethod && "estimatedDays" in value.shippingMethod))
+                return false;
+            if (value.shippingMethod.type !== "standard")
+                return false;
+            if (typeof value.shippingMethod.estimatedDays !== "number")
+                return false;
+            if (!Number.isInteger(value.shippingMethod.estimatedDays))
+                return false;
+            if (value.shippingMethod.estimatedDays < 3)
+                return false;
+            if (value.shippingMethod.estimatedDays > 7)
+                return false;
+            return true;
+        })() || (() => {
+            if (typeof value.shippingMethod !== "object" || value.shippingMethod === null || Array.isArray(value.shippingMethod))
+                return false;
+            if (!("type" in value.shippingMethod && "guaranteedDate" in value.shippingMethod))
+                return false;
+            if (value.shippingMethod.type !== "express")
+                return false;
+            if (typeof value.shippingMethod.guaranteedDate !== "string")
+                return false;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(value.shippingMethod.guaranteedDate))
+                return false;
+            return true;
+        })()))
+            return false;
+    }
+    if ("paymentOptions" in value) {
+        if (!((() => {
+            if (typeof value.paymentOptions !== "object" || value.paymentOptions === null || Array.isArray(value.paymentOptions))
+                return false;
+            if (!("creditCard" in value.paymentOptions))
+                return false;
+            if (typeof value.paymentOptions.creditCard !== "object" || value.paymentOptions.creditCard === null || Array.isArray(value.paymentOptions.creditCard))
+                return false;
+            if (!("lastFourDigits" in value.paymentOptions.creditCard && "brand" in value.paymentOptions.creditCard))
+                return false;
+            if (typeof value.paymentOptions.creditCard.lastFourDigits !== "string")
+                return false;
+            if (!/^\d{4}$/.test(value.paymentOptions.creditCard.lastFourDigits))
+                return false;
+            if (typeof value.paymentOptions.creditCard.brand !== "string")
+                return false;
+            if (!["visa", "mastercard", "amex"].includes(value.paymentOptions.creditCard.brand))
+                return false;
+            return true;
+        })() || (() => {
+            if (typeof value.paymentOptions !== "object" || value.paymentOptions === null || Array.isArray(value.paymentOptions))
+                return false;
+            if (!("paypal" in value.paymentOptions))
+                return false;
+            if (typeof value.paymentOptions.paypal !== "object" || value.paymentOptions.paypal === null || Array.isArray(value.paymentOptions.paypal))
+                return false;
+            if (!("email" in value.paymentOptions.paypal))
+                return false;
+            if (typeof value.paymentOptions.paypal.email !== "string")
+                return false;
+            return true;
+        })() || (() => {
+            if (typeof value.paymentOptions !== "object" || value.paymentOptions === null || Array.isArray(value.paymentOptions))
+                return false;
+            if (!("bankTransfer" in value.paymentOptions))
+                return false;
+            if (typeof value.paymentOptions.bankTransfer !== "object" || value.paymentOptions.bankTransfer === null || Array.isArray(value.paymentOptions.bankTransfer))
+                return false;
+            if (!("accountNumber" in value.paymentOptions.bankTransfer))
+                return false;
+            if (typeof value.paymentOptions.bankTransfer.accountNumber !== "string")
+                return false;
+            if (value.paymentOptions.bankTransfer.accountNumber.length < 10)
+                return false;
+            return true;
+        })()))
+            return false;
+    }
     for (const key in value) {
-        if (!["id", "name", "price", "discount", "tags", "metadata", "status", "variants"].includes(key))
+        if (!["id", "name", "price", "discount", "tags", "metadata", "status", "variants", "shippingMethod", "paymentOptions"].includes(key))
             return false;
     }
     return true;
