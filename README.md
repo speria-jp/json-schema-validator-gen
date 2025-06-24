@@ -13,21 +13,39 @@ A lightweight JSON Schema validator generator that creates minimal TypeScript co
 ## Installation
 
 ```bash
-npm install -D json-schema-validator-gen
+npm install -D @speria-jp/json-schema-validator-gen
 # or
-yarn add -D json-schema-validator-gen
+yarn add -D @speria-jp/json-schema-validator-gen
 # or
-pnpm add -D json-schema-validator-gen
+pnpm add -D @speria-jp/json-schema-validator-gen
 # or
-bun add -D json-schema-validator-gen
+bun add -D @speria-jp/json-schema-validator-gen
 ```
 
 ## Usage
 
 ### CLI
 
+Using npx:
+
 ```bash
-json-schema-validator-gen -s schema.json -o validator.ts
+npx @speria-jp/json-schema-validator-gen -s schema.json -o validator.ts
+```
+
+Or if installed locally in your project:
+
+```bash
+# npm
+npx json-schema-validator-gen -s schema.json -o validator.ts
+
+# yarn
+yarn json-schema-validator-gen -s schema.json -o validator.ts
+
+# pnpm
+pnpm json-schema-validator-gen -s schema.json -o validator.ts
+
+# bun
+bun json-schema-validator-gen -s schema.json -o validator.ts
 ```
 
 Options:
@@ -43,7 +61,7 @@ Options:
 ### Programmatic API
 
 ```typescript
-import { generate } from 'json-schema-validator-gen';
+import { generate } from '@speria-jp/json-schema-validator-gen';
 
 const result = await generate({
   schemaPath: './schema.json',
