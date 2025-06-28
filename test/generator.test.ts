@@ -1064,4 +1064,58 @@ describe("generate", () => {
     expect(result.typeDefinition).toContain("age?: number;");
     expect(result.validatorCode).toContain('"name" in');
   });
+
+  test("should handle object with empty properties", async () => {
+    const schema = {
+      type: "object",
+      properties: {},
+      required: [],
+    };
+
+    await writeFile(schemaPath, JSON.stringify(schema));
+
+    const result = await generate({
+      schemaPath,
+      outputPath,
+      typeName: "EmptyObject",
+    });
+
+    expect(result.typeName).toBe("EmptyObject");
+    expect(result.validatorName).toBe("validateEmptyObject");
+    expect(result.typeDefinition).toContain("export type EmptyObject = {");
+    expect(result.typeDefinition).toContain("};");
+    expect(result.validatorCode).toContain(
+      "function validateEmptyObject(value: unknown): value is EmptyObject",
+    );
+    expect(result.validatorCode).toContain('typeof value !== "object"');
+    expect(result.validatorCode).toContain("value === null");
+  });
+
+  test("should handle object with empty properties and additionalProperties false", async () => {
+    const schema = {
+      type: "object",
+      properties: {},
+      additionalProperties: false,
+    };
+
+    await writeFile(schemaPath, JSON.stringify(schema));
+
+    const result = await generate({
+      schemaPath,
+      outputPath,
+      typeName: "StrictEmptyObject",
+    });
+
+    expect(result.typeName).toBe("StrictEmptyObject");
+    expect(result.typeDefinition).toContain(
+      "export type StrictEmptyObject = {",
+    );
+    expect(result.typeDefinition).toContain("};");
+    expect(result.validatorCode).toContain(
+      "function validateStrictEmptyObject(value: unknown): value is StrictEmptyObject",
+    );
+    // Should check that no additional properties are present
+    expect(result.validatorCode).toContain("for (const key in value)");
+    expect(result.validatorCode).toContain("([] as string[]).includes(key)");
+  });
 });

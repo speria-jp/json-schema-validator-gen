@@ -529,6 +529,20 @@ function generateChecks(
       if (schema.additionalProperties === false && schema.properties) {
         const knownProps = Object.keys(schema.properties);
         const keyVar = factory.createIdentifier("key");
+
+        // Create the array literal with explicit type annotation to avoid never[] type issues
+        const arrayLiteral =
+          knownProps.length > 0
+            ? factory.createArrayLiteralExpression(
+                knownProps.map((p) => factory.createStringLiteral(p)),
+              )
+            : factory.createAsExpression(
+                factory.createArrayLiteralExpression([]),
+                factory.createArrayTypeNode(
+                  factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+                ),
+              );
+
         const checkBody = factory.createBlock(
           [
             createReturnFalseIf(
@@ -536,9 +550,7 @@ function generateChecks(
                 ts.SyntaxKind.ExclamationToken,
                 factory.createCallExpression(
                   factory.createPropertyAccessExpression(
-                    factory.createArrayLiteralExpression(
-                      knownProps.map((p) => factory.createStringLiteral(p)),
-                    ),
+                    arrayLiteral,
                     "includes",
                   ),
                   undefined,
