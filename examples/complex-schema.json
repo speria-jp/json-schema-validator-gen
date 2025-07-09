@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Product",
   "type": "object",
-  "required": ["id", "name", "price"],
+  "required": ["id", "name", "price", "features"],
   "properties": {
     "id": {
       "type": "integer",
@@ -139,6 +139,44 @@
           "required": ["bankTransfer"]
         }
       ]
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "values": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              {
+                "type": "array",
+                "items": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "required": ["name", "values"]
+      }
     }
   },
   "definitions": {

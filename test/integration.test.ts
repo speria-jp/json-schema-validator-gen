@@ -268,6 +268,12 @@ describe("Runtime validation tests", () => {
           id: 1,
           name: "Product 1",
           price: 99.99,
+          features: [
+            {
+              name: "color",
+              values: "red",
+            },
+          ],
         },
         {
           id: 100,
@@ -286,6 +292,16 @@ describe("Runtime validation tests", () => {
               attributes: { color: "red", size: "large" },
             },
           ],
+          features: [
+            {
+              name: "materials",
+              values: ["aluminum", "glass"],
+            },
+            {
+              name: "specifications",
+              values: ["high-resolution", 120],
+            },
+          ],
         },
         // Test oneOf - standard shipping
         {
@@ -296,6 +312,12 @@ describe("Runtime validation tests", () => {
             type: "standard",
             estimatedDays: 5,
           },
+          features: [
+            {
+              name: "shipping",
+              values: "standard",
+            },
+          ],
         },
         // Test oneOf - express shipping
         {
@@ -306,6 +328,12 @@ describe("Runtime validation tests", () => {
             type: "express",
             guaranteedDate: "2025-12-25",
           },
+          features: [
+            {
+              name: "shipping",
+              values: "express",
+            },
+          ],
         },
         // Test anyOf - credit card payment
         {
@@ -318,6 +346,12 @@ describe("Runtime validation tests", () => {
               brand: "visa",
             },
           },
+          features: [
+            {
+              name: "payment",
+              values: "credit-card",
+            },
+          ],
         },
         // Test anyOf - PayPal payment
         {
@@ -329,6 +363,12 @@ describe("Runtime validation tests", () => {
               email: "user@example.com",
             },
           },
+          features: [
+            {
+              name: "payment",
+              values: "paypal",
+            },
+          ],
         },
         // Test anyOf - bank transfer payment
         {
@@ -340,6 +380,12 @@ describe("Runtime validation tests", () => {
               accountNumber: "1234567890ABCD",
             },
           },
+          features: [
+            {
+              name: "payment",
+              values: "bank-transfer",
+            },
+          ],
         },
         // Test both oneOf and anyOf together
         {
@@ -356,6 +402,16 @@ describe("Runtime validation tests", () => {
               brand: "mastercard",
             },
           },
+          features: [
+            {
+              name: "comprehensive",
+              values: ["shipping", "payment", "support"],
+            },
+            {
+              name: "ratings",
+              values: [5, 4.5, 4.8],
+            },
+          ],
         },
       ];
 
@@ -502,6 +558,12 @@ describe("Runtime validation tests", () => {
         id: 1,
         name: "Product 1",
         price: 99.99,
+        features: [
+          {
+            name: "color",
+            values: "red",
+          },
+        ],
       };
 
       const result = unsafeValidateComplex(validObject);
@@ -513,6 +575,7 @@ describe("Runtime validation tests", () => {
       const invalidObjects = [
         { id: 1, name: "Product" }, // missing price
         { id: 1, name: "Product", price: -1 }, // invalid price
+        { id: 1, name: "Product", price: 99.99 }, // missing features
         null,
         undefined,
       ];

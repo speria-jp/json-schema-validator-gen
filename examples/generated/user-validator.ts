@@ -45,8 +45,8 @@ export function validateUser(value: unknown): value is User {
     if ("tags" in value) {
         if (!Array.isArray(value.tags))
             return false;
-        for (const item of value.tags) {
-            if (typeof item !== "string")
+        for (const item1 of value.tags) {
+            if (typeof item1 !== "string")
                 return false;
         }
     }
@@ -56,8 +56,8 @@ export function validateUser(value: unknown): value is User {
         if (!["admin", "user", "guest"].includes(value.role))
             return false;
     }
-    for (const key in value) {
-        if (!["id", "name", "email", "age", "tags", "role"].includes(key))
+    for (const key2 in value) {
+        if (!["id", "name", "email", "age", "tags", "role"].includes(key2))
             return false;
     }
     return true;

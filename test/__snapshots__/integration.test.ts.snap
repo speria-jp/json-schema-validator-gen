@@ -48,8 +48,8 @@ export function validateUser(value: unknown): value is User {
     if ("tags" in value) {
         if (!Array.isArray(value.tags))
             return false;
-        for (const item of value.tags) {
-            if (typeof item !== "string")
+        for (const item1 of value.tags) {
+            if (typeof item1 !== "string")
                 return false;
         }
     }
@@ -59,8 +59,8 @@ export function validateUser(value: unknown): value is User {
         if (!["admin", "user", "guest"].includes(value.role))
             return false;
     }
-    for (const key in value) {
-        if (!["id", "name", "email", "age", "tags", "role"].includes(key))
+    for (const key2 in value) {
+        if (!["id", "name", "email", "age", "tags", "role"].includes(key2))
             return false;
     }
     return true;
@@ -114,13 +114,17 @@ export type Complex = {
             accountNumber: string;
         };
     };
+    features: {
+        name: string;
+        values: string | string[] | (string | number)[];
+    }[];
 };
 
 
 export function validateComplex(value: unknown): value is Complex {
     if (typeof value !== "object" || value === null || Array.isArray(value))
         return false;
-    if (!("id" in value && "name" in value && "price" in value))
+    if (!("id" in value && "name" in value && "price" in value && "features" in value))
         return false;
     if (typeof value.id !== "number")
         return false;
@@ -157,8 +161,8 @@ export function validateComplex(value: unknown): value is Complex {
             return false;
         if (new Set(value.tags).size !== value.tags.length)
             return false;
-        for (const item of value.tags) {
-            if (typeof item !== "string")
+        for (const item1 of value.tags) {
+            if (typeof item1 !== "string")
                 return false;
         }
     }
@@ -191,16 +195,16 @@ export function validateComplex(value: unknown): value is Complex {
     if ("variants" in value) {
         if (!Array.isArray(value.variants))
             return false;
-        for (const item of value.variants) {
-            if (typeof item !== "object" || item === null || Array.isArray(item))
+        for (const item2 of value.variants) {
+            if (typeof item2 !== "object" || item2 === null || Array.isArray(item2))
                 return false;
-            if (!("sku" in item && "attributes" in item))
+            if (!("sku" in item2 && "attributes" in item2))
                 return false;
-            if (typeof item.sku !== "string")
+            if (typeof item2.sku !== "string")
                 return false;
-            if (!/^[A-Z0-9]{6,}$/.test(item.sku))
+            if (!/^[A-Z0-9]{6,}$/.test(item2.sku))
                 return false;
-            if (typeof item.attributes !== "object" || item.attributes === null || Array.isArray(item.attributes))
+            if (typeof item2.attributes !== "object" || item2.attributes === null || Array.isArray(item2.attributes))
                 return false;
         }
     }
@@ -284,8 +288,48 @@ export function validateComplex(value: unknown): value is Complex {
         })()))
             return false;
     }
-    for (const key in value) {
-        if (!["id", "name", "price", "discount", "tags", "metadata", "status", "variants", "shippingMethod", "paymentOptions"].includes(key))
+    if (!Array.isArray(value.features))
+        return false;
+    for (const item3 of value.features) {
+        if (typeof item3 !== "object" || item3 === null || Array.isArray(item3))
+            return false;
+        if (!("name" in item3 && "values" in item3))
+            return false;
+        if (typeof item3.name !== "string")
+            return false;
+        if (!((() => {
+            if (typeof item3.values !== "string")
+                return false;
+            return true;
+        })() || (() => {
+            if (!Array.isArray(item3.values))
+                return false;
+            for (const item4 of item3.values) {
+                if (typeof item4 !== "string")
+                    return false;
+            }
+            return true;
+        })() || (() => {
+            if (!Array.isArray(item3.values))
+                return false;
+            for (const item5 of item3.values) {
+                if (!((() => {
+                    if (typeof item5 !== "string")
+                        return false;
+                    return true;
+                })() || (() => {
+                    if (typeof item5 !== "number")
+                        return false;
+                    return true;
+                })()))
+                    return false;
+            }
+            return true;
+        })()))
+            return false;
+    }
+    for (const key6 in value) {
+        if (!["id", "name", "price", "discount", "tags", "metadata", "status", "variants", "shippingMethod", "paymentOptions", "features"].includes(key6))
             return false;
     }
     return true;

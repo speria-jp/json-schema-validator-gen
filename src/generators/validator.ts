@@ -16,9 +16,16 @@ export function generateValidator(
 ): string {
   const visited = new WeakSet<SchemaNode>();
   const statements: ts.Statement[] = [];
+  const varCounter = { count: 0 };
 
   // Generate validation checks
-  generateChecks(node, factory.createIdentifier("value"), statements, visited);
+  generateChecks(
+    node,
+    factory.createIdentifier("value"),
+    statements,
+    visited,
+    varCounter,
+  );
 
   // Add final return true
   statements.push(factory.createReturnStatement(factory.createTrue()));
@@ -161,6 +168,7 @@ function generateChecks(
   valueExpr: ts.Expression,
   statements: ts.Statement[],
   visited: WeakSet<SchemaNode>,
+  varCounter: { count: number },
 ): void {
   if (visited.has(node)) return;
   visited.add(node);
@@ -179,7 +187,7 @@ function generateChecks(
       const rootNode = node.getNodeRoot();
       const { node: refNode } = rootNode.getNode(schema.$ref);
       if (refNode?.schema) {
-        generateChecks(refNode, valueExpr, statements, visited);
+        generateChecks(refNode, valueExpr, statements, visited, varCounter);
         return;
       }
     } catch (_error) {
@@ -207,7 +215,13 @@ function generateChecks(
         // Create a new node for this definition
         try {
           const definitionNode = rootNode.compileSchema(definition);
-          generateChecks(definitionNode, valueExpr, statements, visited);
+          generateChecks(
+            definitionNode,
+            valueExpr,
+            statements,
+            visited,
+            varCounter,
+          );
           return;
         } catch (_error) {
           // Failed to compile definition, skip validation
@@ -271,7 +285,7 @@ function generateChecks(
     node.oneOf.forEach((subNode) => {
       const subStatements: ts.Statement[] = [];
       const subVisited = new WeakSet<SchemaNode>();
-      generateChecks(subNode, valueExpr, subStatements, subVisited);
+      generateChecks(subNode, valueExpr, subStatements, subVisited, varCounter);
       if (subStatements.length > 0) {
         subStatements.push(factory.createReturnStatement(factory.createTrue()));
         const iife = factory.createCallExpression(
@@ -314,7 +328,7 @@ function generateChecks(
     node.anyOf.forEach((subNode) => {
       const subStatements: ts.Statement[] = [];
       const subVisited = new WeakSet<SchemaNode>();
-      generateChecks(subNode, valueExpr, subStatements, subVisited);
+      generateChecks(subNode, valueExpr, subStatements, subVisited, varCounter);
       if (subStatements.length > 0) {
         subStatements.push(factory.createReturnStatement(factory.createTrue()));
         const iife = factory.createCallExpression(
@@ -418,9 +432,16 @@ function generateChecks(
       addArrayConstraints(schema, valueExpr, statements);
 
       if (schema.items && node.items) {
-        const itemVar = factory.createIdentifier("item");
+        const itemVarName = generateUniqueVarName("item", varCounter);
+        const itemVar = factory.createIdentifier(itemVarName);
         const itemStatements: ts.Statement[] = [];
-        generateChecks(node.items, itemVar, itemStatements, visited);
+        generateChecks(
+          node.items,
+          itemVar,
+          itemStatements,
+          visited,
+          varCounter,
+        );
 
         if (itemStatements.length > 0) {
           const forOf = factory.createForOfStatement(
@@ -505,7 +526,13 @@ function generateChecks(
               );
 
           const propStatements: ts.Statement[] = [];
-          generateChecks(propNode, propAccess, propStatements, visited);
+          generateChecks(
+            propNode,
+            propAccess,
+            propStatements,
+            visited,
+            varCounter,
+          );
 
           if (propStatements.length > 0) {
             if (schema.required?.includes(prop)) {
@@ -528,7 +555,8 @@ function generateChecks(
       // Additional properties check
       if (schema.additionalProperties === false && schema.properties) {
         const knownProps = Object.keys(schema.properties);
-        const keyVar = factory.createIdentifier("key");
+        const keyVarName = generateUniqueVarName("key", varCounter);
+        const keyVar = factory.createIdentifier(keyVarName);
 
         // Create the array literal with explicit type annotation to avoid never[] type issues
         const arrayLiteral =
@@ -896,4 +924,12 @@ function normalizeType(type?: string | string[]): string {
     return type.length === 1 ? normalizeType(type[0]) : "union";
   }
   return type;
+}
+
+function generateUniqueVarName(
+  baseName: string,
+  counter: { count: number },
+): string {
+  counter.count++;
+  return `${baseName}${counter.count}`;
 }

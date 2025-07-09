@@ -1115,7 +1115,7 @@ describe("generate", () => {
       "function validateStrictEmptyObject(value: unknown): value is StrictEmptyObject",
     );
     // Should check that no additional properties are present
-    expect(result.validatorCode).toContain("for (const key in value)");
-    expect(result.validatorCode).toContain("([] as string[]).includes(key)");
+    expect(result.validatorCode).toContain("for (const key1 in value)");
+    expect(result.validatorCode).toContain("([] as string[]).includes(key1)");
   });
 });
