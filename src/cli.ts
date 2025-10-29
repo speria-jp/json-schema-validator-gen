@@ -103,7 +103,7 @@ async function main() {
       }
     }
 
-    const result = await generate({
+    const results = await generate({
       schemaPath: values.schema,
       outputPath: values.output,
       refs: refs,
@@ -115,17 +115,20 @@ async function main() {
     });
 
     // Display results
-    if (result.types && result.types.length > 1) {
-      console.log(`✓ Generated ${result.types.length} types`);
-      for (const type of result.types) {
-        console.log(`  - ${type.typeName} (${type.validatorName})`);
+    if (results.length > 1) {
+      console.log(`✓ Generated ${results.length} types`);
+      for (const result of results) {
+        console.log(`  - ${result.typeName} (${result.validatorName})`);
       }
       console.log(`  - Output: ${values.output}`);
-    } else {
-      console.log(`✓ Generated validator for ${result.typeName}`);
-      console.log(`  - Type: ${result.typeName}`);
-      console.log(`  - Validator: ${result.validatorName}`);
-      console.log(`  - Output: ${values.output}`);
+    } else if (results.length === 1) {
+      const [result] = results;
+      if (result) {
+        console.log(`✓ Generated validator for ${result.typeName}`);
+        console.log(`  - Type: ${result.typeName}`);
+        console.log(`  - Validator: ${result.validatorName}`);
+        console.log(`  - Output: ${values.output}`);
+      }
     }
   } catch (error) {
     console.error("Error:", error);

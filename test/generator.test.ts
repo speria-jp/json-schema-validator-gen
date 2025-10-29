@@ -28,12 +28,14 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "Person",
     });
 
+    expect(results).toHaveLength(1);
+    const result = results[0];
     expect(result.typeName).toBe("Person");
     expect(result.validatorName).toBe("validatePerson");
     expect(result.typeDefinition).toContain("export type Person = {");
@@ -63,11 +65,13 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
     });
 
+    expect(results).toHaveLength(1);
+    const result = results[0];
     expect(result.validatorCode).toContain("/^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/");
     expect(result.validatorCode).toContain("< 0");
     expect(result.validatorCode).toContain("> 100");
@@ -85,11 +89,13 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
     });
 
+    expect(results).toHaveLength(1);
+    const result = results[0];
     expect(result.typeDefinition).toContain(
       '"active" | "inactive" | "pending"',
     );
@@ -110,12 +116,14 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "Tags",
     });
 
+    expect(results).toHaveLength(1);
+    const result = results[0];
     expect(result.typeDefinition).toContain("string[]");
     expect(result.validatorCode).toContain("Array.isArray");
     expect(result.validatorCode).toContain(".length < 1");
@@ -132,13 +140,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       namespace: "API",
       typeName: "User",
     });
 
+    expect(results).toHaveLength(1);
+    const result = results[0];
     expect(result.typeDefinition).toContain("export namespace API");
     expect(result.typeDefinition).toContain("export type User = {");
   });
@@ -166,12 +176,14 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "UserWithAddress",
     });
 
+    expect(results).toHaveLength(1);
+    const result = results[0];
     expect(result.typeName).toBe("UserWithAddress");
     expect(result.typeDefinition).toContain("export type UserWithAddress = {");
     expect(result.typeDefinition).toContain("address:");
@@ -203,12 +215,14 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "User",
     });
 
+    expect(results).toHaveLength(1);
+    const result = results[0];
     expect(result.typeDefinition).toContain("username: string;");
     expect(result.typeDefinition).toContain("description?: string;");
     expect(result.validatorCode).toContain(".length < 3");
@@ -235,12 +249,14 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "Product",
     });
 
+    expect(results).toHaveLength(1);
+    const result = results[0];
     expect(result.typeDefinition).toContain("price?: number;");
     expect(result.typeDefinition).toContain("discount?: number;");
     expect(result.validatorCode).toContain("< 0");
@@ -263,12 +279,14 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "Counter",
     });
 
+    expect(results).toHaveLength(1);
+    const result = results[0];
     expect(result.typeDefinition).toContain("id: number;");
     expect(result.typeDefinition).toContain("count?: number;");
     expect(result.validatorCode).toContain("Number.isInteger");
@@ -292,11 +310,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "TaggedItem",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("tags?: string[];");
     expect(result.validatorCode).toContain("Array.isArray");
@@ -319,11 +341,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "RestrictedObject",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("name?: string;");
     expect(result.typeDefinition).toContain("age?: number;");
@@ -344,11 +370,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "UnionValue",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain(
       "value: string | number | boolean;",
@@ -376,11 +406,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "AnyOfValue",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("data: string | number;");
     expect(result.validatorCode).toContain('"data" in value');
@@ -404,11 +438,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "ConstValues",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain('version: "1.0.0";');
     expect(result.typeDefinition).toContain('type: "product";');
@@ -430,11 +468,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "NullableData",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("data: null;");
     expect(result.typeDefinition).toContain("optionalNull?: null;");
@@ -453,11 +495,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "BooleanFlags",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("active: boolean;");
     expect(result.typeDefinition).toContain("enabled?: boolean;");
@@ -469,12 +515,16 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       exportType: "default",
       typeName: "TestString",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.validatorCode).toContain("export default validate");
   });
@@ -484,12 +534,16 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       minify: true,
       typeName: "TestString",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     // Minified code has fewer line breaks and comments
     expect(result.validatorCode).toBeDefined();
@@ -501,12 +555,16 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       validatorName: "customValidator",
       typeName: "TestString",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.validatorName).toBe("customValidator");
     expect(result.validatorCode).toContain("function customValidator");
@@ -524,11 +582,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "Draft06Test",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain('version?: "1.0.0";');
     expect(result.typeDefinition).toContain("apiKey?: 42;");
@@ -554,11 +616,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "ConditionalSchema",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("country?: string;");
     expect(result.typeDefinition).toContain("postalCode?: string;");
@@ -580,11 +646,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "ReadWriteTest",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("id?: string;");
     expect(result.typeDefinition).toContain("password?: string;");
@@ -613,11 +683,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "DependentTest",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("name?: string;");
     expect(result.typeDefinition).toContain("creditCard?: string;");
@@ -657,11 +731,15 @@ describe("generate", () => {
     for (const testCase of testCases) {
       await writeFile(schemaPath, JSON.stringify(testCase.schema));
 
-      const result = await generate({
+      const results = await generate({
         schemaPath,
         outputPath,
         typeName: testCase.typeName,
       });
+
+      expect(results).toHaveLength(1);
+
+      const result = results[0];
 
       // Verify that basic string types are properly handled in each draft
       expect(result.typeDefinition).toContain(
@@ -689,11 +767,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "MixedFeatures",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain('version?: "1.0";');
     expect(result.typeDefinition).toContain("data?:");
@@ -714,11 +796,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "UnsupportedFeatures",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     // Verify that unsupported features don't cause errors and basic functionality works
     expect(result.typeDefinition).toContain("data?: string;");
@@ -742,11 +828,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "PrefixItemsTest",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     // prefixItems are expected to be processed as tuple types
     expect(result.validatorCode).toContain("Array.isArray");
@@ -767,11 +857,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "NoSchemaDefault",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("name: string;");
     expect(result.typeDefinition).toContain('version?: "2.0";');
@@ -810,11 +904,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "AllOfComposition",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("name: string;");
     expect(result.typeDefinition).toContain("age?: number;");
@@ -850,11 +948,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "FormatValidation",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("email?: string;");
     expect(result.typeDefinition).toContain("uri?: string;");
@@ -888,11 +990,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "PersonWithAddress",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeName).toBe("PersonWithAddress");
     expect(result.typeDefinition).toContain(
@@ -931,11 +1037,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "MixedRefs",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("oldStyle?:");
     expect(result.typeDefinition).toContain("newStyle?:");
@@ -964,11 +1074,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "PatternTest",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     // Check that patterns are properly escaped in generated code
     expect(result.validatorCode).toContain("\\/"); // Escaped forward slash
@@ -998,11 +1112,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "InvalidPatternTest",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     // Valid pattern should be included
     expect(result.validatorCode).toContain("test(value.valid)");
@@ -1052,11 +1170,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "MixedRefStyles",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeDefinition).toContain("user?:");
     expect(result.typeDefinition).toContain("team?:");
@@ -1074,11 +1196,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "EmptyObject",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeName).toBe("EmptyObject");
     expect(result.validatorName).toBe("validateEmptyObject");
@@ -1100,11 +1226,15 @@ describe("generate", () => {
 
     await writeFile(schemaPath, JSON.stringify(schema));
 
-    const result = await generate({
+    const results = await generate({
       schemaPath,
       outputPath,
       typeName: "StrictEmptyObject",
     });
+
+    expect(results).toHaveLength(1);
+
+    const result = results[0];
 
     expect(result.typeName).toBe("StrictEmptyObject");
     expect(result.typeDefinition).toContain(
@@ -1135,16 +1265,15 @@ describe("generate", () => {
 
       await writeFile(schemaPath, JSON.stringify(schema));
 
-      const result = await generate({
+      const results = await generate({
         schemaPath,
         outputPath,
         refs: ["#/$defs/User"],
       });
 
-      expect(result.types).toBeDefined();
-      expect(result.types).toHaveLength(1);
-      expect(result.types?.[0].typeName).toBe("User");
-      expect(result.types?.[0].validatorName).toBe("validateUser");
+      expect(results).toHaveLength(1);
+      expect(results[0].typeName).toBe("User");
+      expect(results[0].validatorName).toBe("validateUser");
     });
 
     test("should generate multiple refs", async () => {
@@ -1157,16 +1286,15 @@ describe("generate", () => {
 
       await writeFile(schemaPath, JSON.stringify(schema));
 
-      const result = await generate({
+      const results = await generate({
         schemaPath,
         outputPath,
         refs: ["#/$defs/User", "#/$defs/Post"],
       });
 
-      expect(result.types).toBeDefined();
-      expect(result.types).toHaveLength(2);
-      expect(result.types?.[0].typeName).toBe("User");
-      expect(result.types?.[1].typeName).toBe("Post");
+      expect(results).toHaveLength(2);
+      expect(results[0].typeName).toBe("User");
+      expect(results[1].typeName).toBe("Post");
     });
 
     test("should handle $ref within sub-schema", async () => {
@@ -1193,16 +1321,15 @@ describe("generate", () => {
 
       await writeFile(schemaPath, JSON.stringify(schema));
 
-      const result = await generate({
+      const results = await generate({
         schemaPath,
         outputPath,
         refs: ["#/$defs/User"],
       });
 
-      expect(result.types).toBeDefined();
-      expect(result.types).toHaveLength(1);
-      expect(result.types?.[0].typeName).toBe("User");
-      expect(result.types?.[0].typeDefinition).toContain("address?:");
+      expect(results).toHaveLength(1);
+      expect(results[0].typeName).toBe("User");
+      expect(results[0].typeDefinition).toContain("address?:");
     });
 
     test("should handle multiple refs with cross-references", async () => {
@@ -1233,14 +1360,13 @@ describe("generate", () => {
 
       await writeFile(schemaPath, JSON.stringify(schema));
 
-      const result = await generate({
+      const results = await generate({
         schemaPath,
         outputPath,
         refs: ["#/$defs/User", "#/$defs/Post"],
       });
 
-      expect(result.types).toBeDefined();
-      expect(result.types).toHaveLength(2);
+      expect(results).toHaveLength(2);
     });
   });
 

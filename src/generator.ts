@@ -11,7 +11,7 @@ import {
 } from "json-schema-library";
 import { generateTypeScript } from "./generators/typescript";
 import { generateValidator } from "./generators/validator";
-import type { GeneratedType, GenerateOptions, GenerateResult } from "./types";
+import type { GenerateOptions, GenerateResult } from "./types";
 import { getGeneratedHeader } from "./utils/header";
 import {
   generateTypeNameFromPath,
@@ -21,7 +21,7 @@ import { getSchemaAtPath } from "./utils/ref-parser";
 
 export async function generate(
   options: GenerateOptions,
-): Promise<GenerateResult> {
+): Promise<GenerateResult[]> {
   // Validation: cannot specify typeName/validatorName with multiple refs
   if (options.refs && options.refs.length > 1) {
     if (options.typeName) {
@@ -41,8 +41,9 @@ export async function generate(
     return await generateMultiple(schema, options);
   }
 
-  // Handle single schema generation (existing behavior)
-  return await generateSingle(schema, options);
+  // Handle single schema generation (existing behavior) - return as array
+  const result = await generateSingle(schema, options);
+  return [result];
 }
 
 async function generateSingle(
@@ -86,9 +87,9 @@ async function generateSingle(
 async function generateMultiple(
   schema: JsonSchema,
   options: GenerateOptions,
-): Promise<GenerateResult> {
+): Promise<GenerateResult[]> {
   const refs = options.refs || [];
-  const types: GeneratedType[] = [];
+  const types: GenerateResult[] = [];
   const typeNames = new Set<string>();
 
   // Process each ref
@@ -163,19 +164,7 @@ async function generateMultiple(
 
   await writeFile(options.outputPath, finalCode, "utf-8");
 
-  // Return result with backward compatibility
-  // For single ref, populate legacy fields
-  const firstType = types[0];
-  if (!firstType) {
-    throw new Error("No types were generated");
-  }
-  return {
-    validatorCode: firstType.validatorCode,
-    typeDefinition: firstType.typeDefinition,
-    typeName: firstType.typeName,
-    validatorName: firstType.validatorName,
-    types,
-  };
+  return types;
 }
 
 function deriveTypeName(schemaPath: string): string {

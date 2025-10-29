@@ -10,19 +10,9 @@ export interface GenerateOptions {
   minify?: boolean;
 }
 
-export interface GeneratedType {
-  typeName: string;
-  validatorName: string;
-  typeDefinition: string;
-  validatorCode: string;
-}
-
 export interface GenerateResult {
-  // Legacy fields for backward compatibility (single schema generation)
-  validatorCode: string;
-  typeDefinition: string;
   typeName: string;
   validatorName: string;
-  // New field for multiple refs
-  types?: GeneratedType[];
+  typeDefinition: string;
+  validatorCode: string;
 }
