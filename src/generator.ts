@@ -36,20 +36,27 @@ export async function generate(
   const schemaContent = await readFile(options.schemaPath, "utf-8");
   const schema = JSON.parse(schemaContent);
 
-  // Handle refs option
+  // Generate types
+  let results: GenerateResult[];
   if (options.refs && options.refs.length > 0) {
-    return await generateMultiple(schema, options);
+    results = generateMultiple(schema, options);
+  } else {
+    const result = generateSingle(schema, options);
+    results = [result];
   }
 
-  // Handle single schema generation (existing behavior) - return as array
-  const result = await generateSingle(schema, options);
-  return [result];
+  // Write output to file
+  await writeOutput(results, options.outputPath, {
+    exportType: options.exportType || "named",
+  });
+
+  return results;
 }
 
-async function generateSingle(
+function generateSingle(
   schema: JsonSchema,
   options: GenerateOptions,
-): Promise<GenerateResult> {
+): GenerateResult {
   const typeName = options.typeName || deriveTypeName(options.schemaPath);
   const validatorName = options.validatorName || `validate${typeName}`;
 
@@ -67,15 +74,6 @@ async function generateSingle(
     exportType: options.exportType || "named",
   });
 
-  const outputDir = dirname(options.outputPath);
-  await mkdir(outputDir, { recursive: true });
-
-  const finalCode = combineOutput(typeDefinition, validatorCode, {
-    exportType: options.exportType || "named",
-  });
-
-  await writeFile(options.outputPath, finalCode, "utf-8");
-
   return {
     validatorCode,
     typeDefinition,
@@ -84,10 +82,10 @@ async function generateSingle(
   };
 }
 
-async function generateMultiple(
+function generateMultiple(
   schema: JsonSchema,
   options: GenerateOptions,
-): Promise<GenerateResult[]> {
+): GenerateResult[] {
   const refs = options.refs || [];
   const types: GenerateResult[] = [];
   const typeNames = new Set<string>();
@@ -151,20 +149,28 @@ async function generateMultiple(
     });
   }
 
-  // Combine all types and validators
-  const allTypeDefinitions = types.map((t) => t.typeDefinition).join("\n\n");
-  const allValidatorCode = types.map((t) => t.validatorCode).join("\n\n");
+  return types;
+}
 
-  const outputDir = dirname(options.outputPath);
+async function writeOutput(
+  results: GenerateResult[],
+  outputPath: string,
+  options: { exportType: "named" | "default" },
+): Promise<void> {
+  // Combine all types and validators
+  const allTypeDefinitions = results.map((t) => t.typeDefinition).join("\n\n");
+  const allValidatorCode = results.map((t) => t.validatorCode).join("\n\n");
+
+  const outputDir = dirname(outputPath);
   await mkdir(outputDir, { recursive: true });
 
-  const finalCode = combineOutput(allTypeDefinitions, allValidatorCode, {
-    exportType: options.exportType || "named",
-  });
+  const finalCode = combineOutput(
+    allTypeDefinitions,
+    allValidatorCode,
+    options,
+  );
 
-  await writeFile(options.outputPath, finalCode, "utf-8");
-
-  return types;
+  await writeFile(outputPath, finalCode, "utf-8");
 }
 
 function deriveTypeName(schemaPath: string): string {
