@@ -51,8 +51,9 @@ bun json-schema-validator-gen -s schema.json -o validator.ts
 Options:
 - `-s, --schema` - Path to JSON Schema file (required)
 - `-o, --output` - Output path for generated code (required)
-- `-t, --typeName` - TypeScript type name (default: derived from schema)
-- `-v, --validatorName` - Validator function name (default: validate{TypeName})
+- `-r, --ref` - JSON Schema reference path (e.g., `#/$defs/User`). Can be specified multiple times to generate multiple types
+- `-t, --typeName` - TypeScript type name (default: derived from schema or ref). Cannot be used with multiple `--ref` options
+- `-v, --validatorName` - Validator function name (default: validate{TypeName}). Cannot be used with multiple `--ref` options
 - `-n, --namespace` - Namespace for generated types
 - `-e, --exportType` - Export type: 'named' or 'default' (default: 'named')
 - `-m, --minify` - Minify generated code (default: false)
@@ -69,6 +70,81 @@ const result = await generate({
   typeName: 'User',
   validatorName: 'validateUser'
 });
+```
+
+### Generating Multiple Types from Sub-schemas
+
+You can generate multiple types from a single JSON Schema file using the `--ref` option:
+
+```bash
+# Generate User and Post types from $defs
+npx json-schema-validator-gen -s schema.json -o types.ts \
+  -r '#/$defs/User' -r '#/$defs/Post'
+```
+
+Given a JSON Schema with `$defs`:
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "Address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "zipCode": { "type": "string" }
+      },
+      "required": ["street", "city"]
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "$ref": "#/$defs/Address" }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "Post": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "authorId": { "type": "string" }
+      },
+      "required": ["id", "title", "authorId"]
+    }
+  }
+}
+```
+
+The generator creates both types in a single file:
+
+```typescript
+export type User = {
+    id: string;
+    name: string;
+    email: string;
+    address?: {
+        street: string;
+        city: string;
+        zipCode?: string;
+    };
+};
+
+export type Post = {
+    id: string;
+    title: string;
+    authorId: string;
+};
+
+export function validateUser(value: unknown): value is User { /* ... */ }
+export function unsafeValidateUser(value: unknown): User { /* ... */ }
+
+export function validatePost(value: unknown): value is Post { /* ... */ }
+export function unsafeValidatePost(value: unknown): Post { /* ... */ }
 ```
 
 ### Example
