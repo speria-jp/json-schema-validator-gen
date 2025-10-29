@@ -59,6 +59,12 @@ describe("generateTypeNameFromPath", () => {
     );
   });
 
+  test("should preserve already PascalCase names", () => {
+    expect(generateTypeNameFromPath("#/$defs/FooBar")).toBe("FooBar");
+    expect(generateTypeNameFromPath("#/$defs/UserProfile")).toBe("UserProfile");
+    expect(generateTypeNameFromPath("#/$defs/APIResponse")).toBe("APIResponse");
+  });
+
   test("should throw error for empty type name segment", () => {
     expect(() => generateTypeNameFromPath("#/$defs/")).toThrow(
       "Cannot generate type name from empty path",
