@@ -1,5 +1,6 @@
 import type { SchemaNode } from "json-schema-library";
 import ts from "typescript";
+import { getTupleInfo } from "../utils/tuple-helpers";
 
 const { factory } = ts;
 
@@ -165,14 +166,38 @@ function generateTypeNode(node: SchemaNode): ts.TypeNode {
     case "null":
       return factory.createLiteralTypeNode(factory.createNull());
 
-    case "array":
+    case "array": {
+      // Check if this is a tuple type
+      const tupleInfo = getTupleInfo(node, schema);
+
+      if (tupleInfo.isTuple) {
+        if (tupleInfo.isDraft2020Tuple && tupleInfo.prefixItems) {
+          // Handle Draft 2020-12 tuple: prefixItems defines element types
+          const elementTypes = tupleInfo.prefixItems.map((item: SchemaNode) =>
+            generateTypeNode(item),
+          );
+          return factory.createTupleTypeNode(elementTypes);
+        } else if (tupleInfo.isDraft07Tuple && tupleInfo.itemSchemas) {
+          // Handle Draft 07 tuple: items as array defines element types
+          const elementTypes = tupleInfo.itemSchemas.map((itemSchema) => {
+            const itemNode = node.compileSchema(itemSchema);
+            return generateTypeNode(itemNode);
+          });
+          return factory.createTupleTypeNode(elementTypes);
+        }
+      }
+
+      // Regular array with single item type
       if (schema.items && node.items) {
         const itemType = generateTypeNode(node.items);
         return factory.createArrayTypeNode(itemType);
       }
+
+      // Array with no item constraints
       return factory.createArrayTypeNode(
         factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword),
       );
+    }
 
     case "object": {
       if (!schema.properties) {

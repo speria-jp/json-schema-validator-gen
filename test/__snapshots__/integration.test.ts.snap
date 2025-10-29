@@ -11,6 +11,10 @@ export type User = {
     age?: number;
     tags?: string[];
     role?: "admin" | "user" | "guest";
+    location?: [
+        number,
+        number
+    ];
 };
 
 
@@ -59,8 +63,26 @@ export function validateUser(value: unknown): value is User {
         if (!["admin", "user", "guest"].includes(value.role))
             return false;
     }
+    if ("location" in value) {
+        if (!Array.isArray(value.location))
+            return false;
+        if (value.location.length !== 2)
+            return false;
+        if (typeof value.location[0] !== "number")
+            return false;
+        if (value.location[0] < -90)
+            return false;
+        if (value.location[0] > 90)
+            return false;
+        if (typeof value.location[1] !== "number")
+            return false;
+        if (value.location[1] < -180)
+            return false;
+        if (value.location[1] > 180)
+            return false;
+    }
     for (const key2 in value) {
-        if (!["id", "name", "email", "age", "tags", "role"].includes(key2))
+        if (!["id", "name", "email", "age", "tags", "role", "location"].includes(key2))
             return false;
     }
     return true;
