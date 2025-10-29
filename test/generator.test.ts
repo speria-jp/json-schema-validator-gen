@@ -1118,4 +1118,191 @@ describe("generate", () => {
     expect(result.validatorCode).toContain("for (const key1 in value)");
     expect(result.validatorCode).toContain("([] as string[]).includes(key1)");
   });
+
+  // Step 3: Tests for refs option
+  describe("generate with refs option", () => {
+    test("should generate single ref", async () => {
+      const schema = {
+        $defs: {
+          User: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+            },
+          },
+        },
+      };
+
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      const result = await generate({
+        schemaPath,
+        outputPath,
+        refs: ["#/$defs/User"],
+      });
+
+      expect(result.types).toBeDefined();
+      expect(result.types).toHaveLength(1);
+      expect(result.types?.[0].typeName).toBe("User");
+      expect(result.types?.[0].validatorName).toBe("validateUser");
+    });
+
+    test("should generate multiple refs", async () => {
+      const schema = {
+        $defs: {
+          User: { type: "object", properties: { name: { type: "string" } } },
+          Post: { type: "object", properties: { title: { type: "string" } } },
+        },
+      };
+
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      const result = await generate({
+        schemaPath,
+        outputPath,
+        refs: ["#/$defs/User", "#/$defs/Post"],
+      });
+
+      expect(result.types).toBeDefined();
+      expect(result.types).toHaveLength(2);
+      expect(result.types?.[0].typeName).toBe("User");
+      expect(result.types?.[1].typeName).toBe("Post");
+    });
+
+    test("should handle $ref within sub-schema", async () => {
+      const schema = {
+        $defs: {
+          Address: {
+            type: "object",
+            properties: {
+              street: { type: "string" },
+              city: { type: "string" },
+            },
+            required: ["street", "city"],
+          },
+          User: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              address: { $ref: "#/$defs/Address" },
+            },
+            required: ["name"],
+          },
+        },
+      };
+
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      const result = await generate({
+        schemaPath,
+        outputPath,
+        refs: ["#/$defs/User"],
+      });
+
+      expect(result.types).toBeDefined();
+      expect(result.types).toHaveLength(1);
+      expect(result.types?.[0].typeName).toBe("User");
+      expect(result.types?.[0].typeDefinition).toContain("address?:");
+    });
+
+    test("should handle multiple refs with cross-references", async () => {
+      const schema = {
+        $defs: {
+          Address: {
+            type: "object",
+            properties: {
+              street: { type: "string" },
+            },
+          },
+          User: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              address: { $ref: "#/$defs/Address" },
+            },
+          },
+          Post: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              author: { $ref: "#/$defs/User" },
+            },
+          },
+        },
+      };
+
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      const result = await generate({
+        schemaPath,
+        outputPath,
+        refs: ["#/$defs/User", "#/$defs/Post"],
+      });
+
+      expect(result.types).toBeDefined();
+      expect(result.types).toHaveLength(2);
+    });
+  });
+
+  // Step 4: Error handling tests
+  describe("generate error handling", () => {
+    test("should throw error when multiple refs with typeName", async () => {
+      const schema = { $defs: { User: {}, Post: {} } };
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      await expect(
+        generate({
+          schemaPath,
+          outputPath,
+          refs: ["#/$defs/User", "#/$defs/Post"],
+          typeName: "MyType",
+        }),
+      ).rejects.toThrow("Cannot specify typeName with multiple refs");
+    });
+
+    test("should throw error when multiple refs with validatorName", async () => {
+      const schema = { $defs: { User: {}, Post: {} } };
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      await expect(
+        generate({
+          schemaPath,
+          outputPath,
+          refs: ["#/$defs/User", "#/$defs/Post"],
+          validatorName: "validate",
+        }),
+      ).rejects.toThrow("Cannot specify validatorName with multiple refs");
+    });
+
+    test("should throw error for non-existent ref", async () => {
+      const schema = { $defs: {} };
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      await expect(
+        generate({
+          schemaPath,
+          outputPath,
+          refs: ["#/$defs/NonExistent"],
+        }),
+      ).rejects.toThrow("Schema not found at path");
+    });
+
+    test("should throw error for duplicate type names", async () => {
+      const schema = {
+        $defs: {
+          User: {},
+          user: {}, // 同じ型名になる
+        },
+      };
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      await expect(
+        generate({
+          schemaPath,
+          outputPath,
+          refs: ["#/$defs/User", "#/$defs/user"],
+        }),
+      ).rejects.toThrow("Duplicate type name");
+    });
+  });
 });
