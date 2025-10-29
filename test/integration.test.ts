@@ -37,6 +37,15 @@ describe("Generated code snapshots", () => {
     },
   );
 
+  // Generate multi-types (multiple refs)
+  execSync(
+    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -r '#/$defs/User' -r '#/$defs/Post' -r '#/$defs/Comment'`,
+    {
+      stdio: "pipe",
+      cwd: join(__dirname, ".."),
+    },
+  );
+
   test("user-validator.ts snapshot", async () => {
     const content = await readFile(
       join(generatedDir, "user-validator.ts"),
@@ -56,6 +65,14 @@ describe("Generated code snapshots", () => {
   test("ref-validator.ts snapshot", async () => {
     const content = await readFile(
       join(generatedDir, "ref-validator.ts"),
+      "utf-8",
+    );
+    expect(content).toMatchSnapshot();
+  });
+
+  test("multi-types.ts snapshot", async () => {
+    const content = await readFile(
+      join(generatedDir, "multi-types.ts"),
       "utf-8",
     );
     expect(content).toMatchSnapshot();
@@ -86,6 +103,14 @@ describe("TypeScript type checking tests", () => {
 
   execSync(
     `bun run ${cliPath} -s ${join(examplesDir, "ref-schema.json")} -o ${join(generatedDir, "ref-validator.ts")} -t Ref -v validateRef`,
+    {
+      stdio: "pipe",
+      cwd: join(__dirname, ".."),
+    },
+  );
+
+  execSync(
+    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -r '#/$defs/User' -r '#/$defs/Post' -r '#/$defs/Comment'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -130,6 +155,14 @@ describe("Runtime validation tests", () => {
 
   execSync(
     `bun run ${cliPath} -s ${join(examplesDir, "ref-schema.json")} -o ${join(generatedDir, "ref-validator.ts")} -t Ref -v validateRef`,
+    {
+      stdio: "pipe",
+      cwd: join(__dirname, ".."),
+    },
+  );
+
+  execSync(
+    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -r '#/$defs/User' -r '#/$defs/Post' -r '#/$defs/Comment'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -665,6 +698,241 @@ describe("Runtime validation tests", () => {
       for (const obj of invalidObjects) {
         expect(validateRef(obj)).toBe(false);
       }
+    });
+  });
+
+  describe("Multiple refs validators", () => {
+    let validateUser: (value: unknown) => boolean;
+    let validatePost: (value: unknown) => boolean;
+    let validateComment: (value: unknown) => boolean;
+    // biome-ignore lint/suspicious/noExplicitAny: Types are imported dynamically
+    let unsafeValidateUser: (value: unknown) => any;
+    // biome-ignore lint/suspicious/noExplicitAny: Types are imported dynamically
+    let unsafeValidatePost: (value: unknown) => any;
+    // biome-ignore lint/suspicious/noExplicitAny: Types are imported dynamically
+    let unsafeValidateComment: (value: unknown) => any;
+
+    test("setup", async () => {
+      const multiTypes = await import(join(generatedDir, "multi-types.ts"));
+      validateUser = multiTypes.validateUser;
+      validatePost = multiTypes.validatePost;
+      validateComment = multiTypes.validateComment;
+      unsafeValidateUser = multiTypes.unsafeValidateUser;
+      unsafeValidatePost = multiTypes.unsafeValidatePost;
+      unsafeValidateComment = multiTypes.unsafeValidateComment;
+    });
+
+    test("validates valid User objects", () => {
+      const validUsers = [
+        {
+          id: "user-1",
+          name: "John Doe",
+          email: "john@example.com",
+        },
+        {
+          id: "user-2",
+          name: "Jane Smith",
+          email: "jane.smith@company.org",
+        },
+      ];
+
+      for (const user of validUsers) {
+        expect(validateUser(user)).toBe(true);
+      }
+    });
+
+    test("rejects invalid User objects", () => {
+      const invalidUsers = [
+        { id: "user-1", name: "John" }, // missing email
+        { id: "user-1", email: "john@example.com" }, // missing name
+        { name: "John", email: "john@example.com" }, // missing id
+        { id: "user-1", name: "", email: "john@example.com" }, // empty name
+        { id: "user-1", name: "John", email: "invalid-email" }, // invalid email
+        {
+          id: "user-1",
+          name: "John",
+          email: "john@example.com",
+          extra: "field",
+        }, // additional property
+      ];
+
+      for (const user of invalidUsers) {
+        expect(validateUser(user)).toBe(false);
+      }
+    });
+
+    test("validates valid Post objects", () => {
+      const validPosts = [
+        {
+          id: "post-1",
+          title: "First Post",
+          content: "This is the content",
+          authorId: "user-1",
+        },
+        {
+          id: "post-2",
+          title: "Second Post",
+          content: "Another post content",
+          authorId: "user-2",
+          tags: ["javascript", "typescript"],
+          published: true,
+        },
+      ];
+
+      for (const post of validPosts) {
+        expect(validatePost(post)).toBe(true);
+      }
+    });
+
+    test("rejects invalid Post objects", () => {
+      const invalidPosts = [
+        { id: "post-1", title: "Title", content: "Content" }, // missing authorId
+        { id: "post-1", title: "", content: "Content", authorId: "user-1" }, // empty title
+        {
+          id: "post-1",
+          title: "a".repeat(201),
+          content: "Content",
+          authorId: "user-1",
+        }, // title too long
+        {
+          id: "post-1",
+          title: "Title",
+          content: "Content",
+          authorId: "user-1",
+          tags: "tag",
+        }, // invalid tags type
+        {
+          id: "post-1",
+          title: "Title",
+          content: "Content",
+          authorId: "user-1",
+          published: "true",
+        }, // invalid published type
+      ];
+
+      for (const post of invalidPosts) {
+        expect(validatePost(post)).toBe(false);
+      }
+    });
+
+    test("validates valid Comment objects", () => {
+      const validComments = [
+        {
+          id: "comment-1",
+          postId: "post-1",
+          authorId: "user-1",
+          text: "Great post!",
+          createdAt: "2025-01-01T12:00:00Z",
+        },
+        {
+          id: "comment-2",
+          postId: "post-1",
+          authorId: "user-2",
+          text: "Thanks for sharing.",
+          createdAt: "2025-01-02T14:30:00Z",
+        },
+      ];
+
+      for (const comment of validComments) {
+        expect(validateComment(comment)).toBe(true);
+      }
+    });
+
+    test("rejects invalid Comment objects", () => {
+      const invalidComments = [
+        {
+          id: "comment-1",
+          postId: "post-1",
+          authorId: "user-1",
+          text: "Comment",
+        }, // missing createdAt
+        {
+          id: "comment-1",
+          postId: "post-1",
+          authorId: "user-1",
+          text: "",
+          createdAt: "2025-01-01T12:00:00Z",
+        }, // empty text
+        {
+          id: "comment-1",
+          postId: "post-1",
+          authorId: "user-1",
+          text: "a".repeat(1001),
+          createdAt: "2025-01-01T12:00:00Z",
+        }, // text too long
+      ];
+
+      for (const comment of invalidComments) {
+        expect(validateComment(comment)).toBe(false);
+      }
+    });
+
+    test("unsafeValidateUser returns value for valid objects", () => {
+      const validUser = {
+        id: "user-1",
+        name: "John Doe",
+        email: "john@example.com",
+      };
+
+      const result = unsafeValidateUser(validUser);
+      expect(result).toEqual(validUser);
+      expect(result).toBe(validUser);
+    });
+
+    test("unsafeValidateUser throws for invalid objects", () => {
+      const invalidUser = { id: "user-1", name: "John" }; // missing email
+
+      expect(() => unsafeValidateUser(invalidUser)).toThrow(
+        "Validation failed: value is not User",
+      );
+    });
+
+    test("unsafeValidatePost returns value for valid objects", () => {
+      const validPost = {
+        id: "post-1",
+        title: "First Post",
+        content: "This is the content",
+        authorId: "user-1",
+      };
+
+      const result = unsafeValidatePost(validPost);
+      expect(result).toEqual(validPost);
+      expect(result).toBe(validPost);
+    });
+
+    test("unsafeValidatePost throws for invalid objects", () => {
+      const invalidPost = { id: "post-1", title: "Title", content: "Content" }; // missing authorId
+
+      expect(() => unsafeValidatePost(invalidPost)).toThrow(
+        "Validation failed: value is not Post",
+      );
+    });
+
+    test("unsafeValidateComment returns value for valid objects", () => {
+      const validComment = {
+        id: "comment-1",
+        postId: "post-1",
+        authorId: "user-1",
+        text: "Great post!",
+        createdAt: "2025-01-01T12:00:00Z",
+      };
+
+      const result = unsafeValidateComment(validComment);
+      expect(result).toEqual(validComment);
+      expect(result).toBe(validComment);
+    });
+
+    test("unsafeValidateComment throws for invalid objects", () => {
+      const invalidComment = {
+        id: "comment-1",
+        postId: "post-1",
+        authorId: "user-1",
+        text: "Comment",
+      }; // missing createdAt
+
+      expect(() => unsafeValidateComment(invalidComment)).toThrow(
+        "Validation failed: value is not Comment",
+      );
     });
   });
 });
