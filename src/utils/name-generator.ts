@@ -47,14 +47,14 @@ export function generateValidatorName(typeName: string): string {
  * toPascalCase("user-profile") // "UserProfile"
  * toPascalCase("user_profile") // "UserProfile"
  * toPascalCase("user-profile_info") // "UserProfileInfo"
+ * toPascalCase("user--profile") // "UserProfile" (handles consecutive separators)
  */
 function toPascalCase(str: string): string {
-  // Split by hyphens and underscores
-  const parts = str.split(/[-_]/);
+  // Split by hyphens and underscores, filter out empty parts
+  const parts = str.split(/[-_]/).filter((part) => part.length > 0);
 
   return parts
     .map((part) => {
-      if (!part) return "";
       // Capitalize first letter, lowercase the rest
       return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
     })

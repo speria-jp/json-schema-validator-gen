@@ -40,6 +40,30 @@ describe("generateTypeNameFromPath", () => {
   test("should handle numbers in names", () => {
     expect(generateTypeNameFromPath("#/$defs/user2")).toBe("User2");
   });
+
+  test("should handle consecutive hyphens", () => {
+    expect(generateTypeNameFromPath("#/$defs/user--profile")).toBe(
+      "UserProfile",
+    );
+  });
+
+  test("should handle consecutive underscores", () => {
+    expect(generateTypeNameFromPath("#/$defs/user__profile")).toBe(
+      "UserProfile",
+    );
+  });
+
+  test("should handle mixed consecutive separators", () => {
+    expect(generateTypeNameFromPath("#/$defs/user--_profile")).toBe(
+      "UserProfile",
+    );
+  });
+
+  test("should throw error for empty type name segment", () => {
+    expect(() => generateTypeNameFromPath("#/$defs/")).toThrow(
+      "Cannot generate type name from empty path",
+    );
+  });
 });
 
 describe("generateValidatorName", () => {

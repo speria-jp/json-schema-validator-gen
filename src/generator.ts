@@ -115,10 +115,17 @@ function generateMultiple(
 
     // Compile the sub-schema with root schema context for $ref resolution
     // Merge $defs and definitions from root schema so $ref can be resolved
+    // Sub-schema's definitions take precedence over root schema's definitions
     const schemaWithDefs: JsonSchema = {
       ...subSchema,
-      $defs: schema.$defs,
-      definitions: schema.definitions,
+      $defs: {
+        ...(schema.$defs || {}),
+        ...(subSchema.$defs || {}),
+      },
+      definitions: {
+        ...(schema.definitions || {}),
+        ...(subSchema.definitions || {}),
+      },
     };
 
     const schemaNode = compileSchema(schemaWithDefs, {
