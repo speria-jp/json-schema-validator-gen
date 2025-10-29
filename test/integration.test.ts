@@ -203,6 +203,19 @@ describe("Runtime validation tests", () => {
           email: "bob@test.io",
           role: "user",
         },
+        // Test tuple field (location: [latitude, longitude])
+        {
+          id: 200,
+          name: "Alice",
+          email: "alice@example.com",
+          location: [35.6762, 139.6503], // Tokyo coordinates
+        },
+        {
+          id: 201,
+          name: "Charlie",
+          email: "charlie@example.com",
+          location: [40.7128, -74.006], // New York coordinates
+        },
       ];
 
       for (const user of validUsers) {
@@ -238,6 +251,23 @@ describe("Runtime validation tests", () => {
 
         // Additional properties
         { id: 1, name: "John", email: "john@example.com", extra: "field" },
+
+        // Invalid tuple (location)
+        { id: 1, name: "John", email: "john@example.com", location: [35.6762] }, // too few elements
+        {
+          id: 1,
+          name: "John",
+          email: "john@example.com",
+          location: [35.6762, 139.6503, 100],
+        }, // too many elements
+        {
+          id: 1,
+          name: "John",
+          email: "john@example.com",
+          location: ["35.6762", "139.6503"],
+        }, // wrong type
+        { id: 1, name: "John", email: "john@example.com", location: [91, 0] }, // latitude out of range
+        { id: 1, name: "John", email: "john@example.com", location: [0, 181] }, // longitude out of range
 
         // Not objects
         null,

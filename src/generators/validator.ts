@@ -1,5 +1,6 @@
 import type { JsonSchema, SchemaNode } from "json-schema-library";
 import ts from "typescript";
+import { getTupleInfo } from "../utils/tuple-helpers";
 
 const { factory } = ts;
 
@@ -413,7 +414,7 @@ function generateChecks(
       );
       break;
 
-    case "array":
+    case "array": {
       statements.push(
         createReturnFalseIf(
           factory.createPrefixUnaryExpression(
@@ -429,34 +430,156 @@ function generateChecks(
           ),
         ),
       );
-      addArrayConstraints(schema, valueExpr, statements);
 
-      if (schema.items && node.items) {
-        const itemVarName = generateUniqueVarName("item", varCounter);
-        const itemVar = factory.createIdentifier(itemVarName);
-        const itemStatements: ts.Statement[] = [];
-        generateChecks(
-          node.items,
-          itemVar,
-          itemStatements,
-          visited,
-          varCounter,
-        );
+      // Check if this is a tuple type
+      const tupleInfo = getTupleInfo(node, schema);
 
-        if (itemStatements.length > 0) {
-          const forOf = factory.createForOfStatement(
-            undefined,
-            factory.createVariableDeclarationList(
-              [factory.createVariableDeclaration(itemVar)],
-              ts.NodeFlags.Const,
+      if (tupleInfo.isTuple) {
+        if (tupleInfo.isDraft2020Tuple && tupleInfo.prefixItems) {
+          // Handle Draft 2020-12 tuple with prefixItems
+          if (tupleInfo.isFixedLength) {
+            // Fixed-length tuple: array must have exactly prefixItems.length elements
+            statements.push(
+              createReturnFalseIf(
+                factory.createBinaryExpression(
+                  factory.createPropertyAccessExpression(valueExpr, "length"),
+                  ts.SyntaxKind.ExclamationEqualsEqualsToken,
+                  factory.createNumericLiteral(tupleInfo.prefixItems.length),
+                ),
+              ),
+            );
+          } else {
+            // Variable-length tuple: use minItems/maxItems constraints if specified
+            addArrayConstraints(schema, valueExpr, statements);
+          }
+
+          // Validate each prefixItems element against its schema
+          tupleInfo.prefixItems.forEach((itemNode, index) => {
+            const elementAccess = factory.createElementAccessExpression(
+              valueExpr,
+              factory.createNumericLiteral(index),
+            );
+            generateChecks(
+              itemNode,
+              elementAccess,
+              statements,
+              visited,
+              varCounter,
+            );
+          });
+
+          // If items schema is defined (and not an array), validate remaining elements
+          if (schema.items && !Array.isArray(schema.items) && node.items) {
+            // Validate all elements after prefixItems using the items schema
+            const indexVarName = generateUniqueVarName("i", varCounter);
+            const indexVar = factory.createIdentifier(indexVarName);
+            const itemStatements: ts.Statement[] = [];
+
+            const elementAccess = factory.createElementAccessExpression(
+              valueExpr,
+              indexVar,
+            );
+
+            generateChecks(
+              node.items,
+              elementAccess,
+              itemStatements,
+              visited,
+              varCounter,
+            );
+
+            if (itemStatements.length > 0) {
+              // for (let i = prefixItems.length; i < value.length; i++)
+              const forLoop = factory.createForStatement(
+                factory.createVariableDeclarationList(
+                  [
+                    factory.createVariableDeclaration(
+                      indexVar,
+                      undefined,
+                      undefined,
+                      factory.createNumericLiteral(
+                        tupleInfo.prefixItems.length,
+                      ),
+                    ),
+                  ],
+                  ts.NodeFlags.Let,
+                ),
+                factory.createBinaryExpression(
+                  indexVar,
+                  ts.SyntaxKind.LessThanToken,
+                  factory.createPropertyAccessExpression(valueExpr, "length"),
+                ),
+                factory.createPostfixUnaryExpression(
+                  indexVar,
+                  ts.SyntaxKind.PlusPlusToken,
+                ),
+                factory.createBlock(itemStatements, true),
+              );
+              statements.push(forLoop);
+            }
+          }
+        } else if (tupleInfo.isDraft07Tuple && tupleInfo.itemSchemas) {
+          // Handle Draft 07 tuple: items as array of schemas
+          // This is always a fixed-length tuple
+          statements.push(
+            createReturnFalseIf(
+              factory.createBinaryExpression(
+                factory.createPropertyAccessExpression(valueExpr, "length"),
+                ts.SyntaxKind.ExclamationEqualsEqualsToken,
+                factory.createNumericLiteral(tupleInfo.itemSchemas.length),
+              ),
             ),
-            valueExpr,
-            factory.createBlock(itemStatements, true),
           );
-          statements.push(forOf);
+
+          // Validate each tuple element against its corresponding schema
+          tupleInfo.itemSchemas.forEach((itemSchema, index) => {
+            const elementAccess = factory.createElementAccessExpression(
+              valueExpr,
+              factory.createNumericLiteral(index),
+            );
+            const itemNode = node.compileSchema(itemSchema);
+            generateChecks(
+              itemNode,
+              elementAccess,
+              statements,
+              visited,
+              varCounter,
+            );
+          });
+        }
+      } else {
+        // Regular array: items is a single schema or undefined
+        addArrayConstraints(schema, valueExpr, statements);
+
+        // Validate all elements against the same items schema
+        if (schema.items && node.items) {
+          const itemVarName = generateUniqueVarName("item", varCounter);
+          const itemVar = factory.createIdentifier(itemVarName);
+          const itemStatements: ts.Statement[] = [];
+          generateChecks(
+            node.items,
+            itemVar,
+            itemStatements,
+            visited,
+            varCounter,
+          );
+
+          if (itemStatements.length > 0) {
+            const forOf = factory.createForOfStatement(
+              undefined,
+              factory.createVariableDeclarationList(
+                [factory.createVariableDeclaration(itemVar)],
+                ts.NodeFlags.Const,
+              ),
+              valueExpr,
+              factory.createBlock(itemStatements, true),
+            );
+            statements.push(forOf);
+          }
         }
       }
       break;
+    }
 
     case "object": {
       // Object type check
@@ -670,13 +793,25 @@ function createLiteralExpression(value: unknown): ts.Expression {
   if (typeof value === "string") {
     return factory.createStringLiteral(value);
   } else if (typeof value === "number") {
-    return factory.createNumericLiteral(value);
+    return createNumericLiteralExpression(value);
   } else if (typeof value === "boolean") {
     return value ? factory.createTrue() : factory.createFalse();
   } else if (value === null) {
     return factory.createNull();
   }
   return factory.createIdentifier("undefined");
+}
+
+// Helper function to create numeric literal that handles negative numbers
+function createNumericLiteralExpression(value: number): ts.Expression {
+  if (value < 0) {
+    // For negative numbers, create a prefix unary expression: -N
+    return factory.createPrefixUnaryExpression(
+      ts.SyntaxKind.MinusToken,
+      factory.createNumericLiteral(Math.abs(value)),
+    );
+  }
+  return factory.createNumericLiteral(value);
 }
 
 function addStringConstraints(
@@ -749,7 +884,7 @@ function addNumberConstraints(
         factory.createBinaryExpression(
           value,
           ts.SyntaxKind.LessThanToken,
-          factory.createNumericLiteral(schema.minimum),
+          createNumericLiteralExpression(schema.minimum),
         ),
       ),
     );
@@ -761,7 +896,7 @@ function addNumberConstraints(
         factory.createBinaryExpression(
           value,
           ts.SyntaxKind.GreaterThanToken,
-          factory.createNumericLiteral(schema.maximum),
+          createNumericLiteralExpression(schema.maximum),
         ),
       ),
     );
@@ -774,7 +909,7 @@ function addNumberConstraints(
           factory.createBinaryExpression(
             value,
             ts.SyntaxKind.LessThanEqualsToken,
-            factory.createNumericLiteral(schema.exclusiveMinimum),
+            createNumericLiteralExpression(schema.exclusiveMinimum),
           ),
         ),
       );
@@ -787,7 +922,7 @@ function addNumberConstraints(
           factory.createBinaryExpression(
             value,
             ts.SyntaxKind.LessThanEqualsToken,
-            factory.createNumericLiteral(schema.minimum),
+            createNumericLiteralExpression(schema.minimum),
           ),
         ),
       );
@@ -801,7 +936,7 @@ function addNumberConstraints(
           factory.createBinaryExpression(
             value,
             ts.SyntaxKind.GreaterThanEqualsToken,
-            factory.createNumericLiteral(schema.exclusiveMaximum),
+            createNumericLiteralExpression(schema.exclusiveMaximum),
           ),
         ),
       );
@@ -814,7 +949,7 @@ function addNumberConstraints(
           factory.createBinaryExpression(
             value,
             ts.SyntaxKind.GreaterThanEqualsToken,
-            factory.createNumericLiteral(schema.maximum),
+            createNumericLiteralExpression(schema.maximum),
           ),
         ),
       );

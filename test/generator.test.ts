@@ -130,6 +130,45 @@ describe("generate", () => {
     expect(result.validatorCode).toContain(".length > 5");
   });
 
+  test("should handle tuple types (items as array)", async () => {
+    const schema = {
+      type: "object",
+      properties: {
+        eventRange: {
+          type: "array",
+          items: [{ type: "number" }, { type: "number" }],
+        },
+        coordinates: {
+          type: "array",
+          items: [{ type: "string" }, { type: "number" }, { type: "boolean" }],
+        },
+      },
+    };
+
+    await writeFile(schemaPath, JSON.stringify(schema));
+
+    const results = await generate({
+      schemaPath,
+      outputPath,
+      typeName: "TupleTest",
+    });
+
+    expect(results).toHaveLength(1);
+    const result = results[0];
+
+    // eventRange should be a tuple type [number, number]
+    expect(result.typeDefinition).toContain("eventRange?:");
+    expect(result.typeDefinition).toMatch(
+      /eventRange\?:\s*\[\s*number,\s*number\s*\]/,
+    );
+
+    // coordinates should be a tuple type [string, number, boolean]
+    expect(result.typeDefinition).toContain("coordinates?:");
+    expect(result.typeDefinition).toMatch(
+      /coordinates\?:\s*\[\s*string,\s*number,\s*boolean\s*\]/,
+    );
+  });
+
   test("should support namespace option", async () => {
     const schema = {
       type: "object",
