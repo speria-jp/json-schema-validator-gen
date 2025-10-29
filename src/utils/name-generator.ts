@@ -41,6 +41,7 @@ export function generateValidatorName(typeName: string): string {
 /**
  * Convert a string to PascalCase
  * Handles kebab-case, snake_case, and mixed separators
+ * Preserves existing casing within each segment
  * @param str - The input string
  * @returns A PascalCase string
  * @example
@@ -48,15 +49,13 @@ export function generateValidatorName(typeName: string): string {
  * toPascalCase("user_profile") // "UserProfile"
  * toPascalCase("user-profile_info") // "UserProfileInfo"
  * toPascalCase("user--profile") // "UserProfile" (handles consecutive separators)
+ * toPascalCase("FooBar") // "FooBar" (preserves existing PascalCase)
  */
 function toPascalCase(str: string): string {
-  // Split by hyphens and underscores, filter out empty parts
-  const parts = str.split(/[-_]/).filter((part) => part.length > 0);
-
-  return parts
-    .map((part) => {
-      // Capitalize first letter, lowercase the rest
-      return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
-    })
-    .join("");
+  // Use regex to capitalize characters after separators or at the start
+  // [-_]+ matches one or more consecutive separators
+  // Then remove all separators
+  return str
+    .replace(/(?:^|[-_]+)(.)/g, (_, letter) => letter.toUpperCase())
+    .replace(/[-_]+/g, "");
 }
