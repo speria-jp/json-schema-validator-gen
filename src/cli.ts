@@ -23,14 +23,6 @@ const { values } = parseArgs({
       type: "string",
       short: "t",
     },
-    namespace: {
-      type: "string",
-      short: "n",
-    },
-    exportType: {
-      type: "string",
-      short: "e",
-    },
     help: {
       type: "boolean",
       short: "h",
@@ -52,8 +44,6 @@ Options:
                        Defaults to "#" (root schema)
   -t, --typeName       TypeScript type name (default: derived from schema or target)
                        Cannot be used with multiple --target options
-  -n, --namespace      Namespace for generated types
-  -e, --exportType     Export type: 'named' or 'default' (default: 'named')
   -h, --help           Show this help message
 
 Examples:
@@ -92,8 +82,6 @@ async function main() {
       outputPath: values.output,
       targets: targets,
       typeName: values.typeName,
-      namespace: values.namespace,
-      exportType: values.exportType as "named" | "default" | undefined,
     });
 
     // Display results

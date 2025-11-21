@@ -169,29 +169,6 @@ describe("generate", () => {
     );
   });
 
-  test("should support namespace option", async () => {
-    const schema = {
-      type: "object",
-      properties: {
-        id: { type: "string" },
-      },
-    };
-
-    await writeFile(schemaPath, JSON.stringify(schema));
-
-    const results = await generate({
-      schemaPath,
-      outputPath,
-      namespace: "API",
-      typeName: "User",
-    });
-
-    expect(results).toHaveLength(1);
-    const result = results[0];
-    expect(result.typeDefinition).toContain("export namespace API");
-    expect(result.typeDefinition).toContain("export type User = {");
-  });
-
   test("should handle $ref references", async () => {
     const schema = {
       type: "object",
@@ -547,25 +524,6 @@ describe("generate", () => {
     expect(result.typeDefinition).toContain("active: boolean;");
     expect(result.typeDefinition).toContain("enabled?: boolean;");
     expect(result.validatorCode).toContain('typeof value.active !== "boolean"');
-  });
-
-  test("should generate default export when exportType is 'default'", async () => {
-    const schema = { type: "string" };
-
-    await writeFile(schemaPath, JSON.stringify(schema));
-
-    const results = await generate({
-      schemaPath,
-      outputPath,
-      exportType: "default",
-      typeName: "TestString",
-    });
-
-    expect(results).toHaveLength(1);
-
-    const result = results[0];
-
-    expect(result.validatorCode).toContain("export default validate");
   });
 
   test("should handle Draft-06 const keyword", async () => {

@@ -39,9 +39,7 @@ export async function generate(
   const results = generateForTargets(schema, { ...options, targets });
 
   // Write output to file
-  await writeOutput(results, options.outputPath, {
-    exportType: options.exportType || "named",
-  });
+  await writeOutput(results, options.outputPath);
 
   return results;
 }
@@ -99,18 +97,13 @@ function generateForTargets(
     });
 
     // Generate TypeScript type
-    const typeDefinition = generateTypeScript(schemaNode, typeName, {
-      namespace: options.namespace,
-    });
+    const typeDefinition = generateTypeScript(schemaNode, typeName);
 
     // Generate validator
     const validatorCode = generateValidator(
       schemaNode,
       validatorNameForType,
       typeName,
-      {
-        exportType: options.exportType || "named",
-      },
     );
 
     types.push({
@@ -127,7 +120,6 @@ function generateForTargets(
 async function writeOutput(
   results: GenerateResult[],
   outputPath: string,
-  options: { exportType: "named" | "default" },
 ): Promise<void> {
   // Combine all types and validators
   const allTypeDefinitions = results.map((t) => t.typeDefinition).join("\n\n");
@@ -136,11 +128,7 @@ async function writeOutput(
   const outputDir = dirname(outputPath);
   await mkdir(outputDir, { recursive: true });
 
-  const finalCode = combineOutput(
-    allTypeDefinitions,
-    allValidatorCode,
-    options,
-  );
+  const finalCode = combineOutput(allTypeDefinitions, allValidatorCode);
 
   await writeFile(outputPath, finalCode, "utf-8");
 }
@@ -153,11 +141,7 @@ function deriveTypeName(schemaPath: string): string {
     .join("");
 }
 
-function combineOutput(
-  typeDefinition: string,
-  validatorCode: string,
-  _options: { exportType: "named" | "default" },
-): string {
+function combineOutput(typeDefinition: string, validatorCode: string): string {
   // Add header only once at the top
   return `${getGeneratedHeader()}${typeDefinition}
 

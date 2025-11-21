@@ -4,8 +4,6 @@ export interface GenerateOptions {
   /** JSON Schema target paths to generate (e.g., ["#/$defs/User", "#/$defs/Post"]). Defaults to ["#"] (root) */
   targets?: string[];
   typeName?: string;
-  namespace?: string;
-  exportType?: "named" | "default";
 }
 
 export interface GenerateResult {

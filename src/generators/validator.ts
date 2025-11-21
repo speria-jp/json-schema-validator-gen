@@ -4,15 +4,10 @@ import { getTupleInfo } from "../utils/tuple-helpers";
 
 const { factory } = ts;
 
-interface ValidatorGenOptions {
-  exportType: "named" | "default";
-}
-
 export function generateValidator(
   node: SchemaNode,
   validatorName: string,
   typeName: string,
-  options: ValidatorGenOptions,
 ): string {
   const visited = new WeakSet<SchemaNode>();
   const statements: ts.Statement[] = [];
@@ -51,9 +46,7 @@ export function generateValidator(
 
   // Create function declaration
   const functionDecl = factory.createFunctionDeclaration(
-    options.exportType === "named"
-      ? [factory.createModifier(ts.SyntaxKind.ExportKeyword)]
-      : undefined,
+    [factory.createModifier(ts.SyntaxKind.ExportKeyword)],
     undefined,
     validatorName,
     undefined,
@@ -121,9 +114,7 @@ export function generateValidator(
 
   // Create unsafe function declaration
   const unsafeFunctionDecl = factory.createFunctionDeclaration(
-    options.exportType === "named"
-      ? [factory.createModifier(ts.SyntaxKind.ExportKeyword)]
-      : undefined,
+    [factory.createModifier(ts.SyntaxKind.ExportKeyword)],
     undefined,
     unsafeValidatorName,
     undefined,
@@ -133,21 +124,8 @@ export function generateValidator(
   );
 
   // Create source file
-  const sourceFileStatements: ts.Statement[] =
-    options.exportType === "default"
-      ? [
-          functionDecl,
-          unsafeFunctionDecl,
-          factory.createExportAssignment(
-            undefined,
-            undefined,
-            factory.createIdentifier(validatorName),
-          ),
-        ]
-      : [functionDecl, unsafeFunctionDecl];
-
   const sourceFile = factory.createSourceFile(
-    sourceFileStatements,
+    [functionDecl, unsafeFunctionDecl],
     factory.createToken(ts.SyntaxKind.EndOfFileToken),
     ts.NodeFlags.None,
   );
