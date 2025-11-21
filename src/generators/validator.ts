@@ -5,7 +5,6 @@ import { getTupleInfo } from "../utils/tuple-helpers";
 const { factory } = ts;
 
 interface ValidatorGenOptions {
-  minify?: boolean;
   exportType: "named" | "default";
 }
 
@@ -156,8 +155,6 @@ export function generateValidator(
   // Print with appropriate settings
   const printer = ts.createPrinter({
     newLine: ts.NewLineKind.LineFeed,
-    removeComments: options.minify || false,
-    omitTrailingSemicolon: options.minify || false,
   });
 
   // Don't add header - it will be added in combineOutput

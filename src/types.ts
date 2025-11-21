@@ -6,8 +6,6 @@ export interface GenerateOptions {
   typeName?: string;
   namespace?: string;
   exportType?: "named" | "default";
-  validatorName?: string;
-  minify?: boolean;
 }
 
 export interface GenerateResult {

@@ -22,13 +22,10 @@ import { getSchemaAtPath } from "./utils/ref-parser";
 export async function generate(
   options: GenerateOptions,
 ): Promise<GenerateResult[]> {
-  // Validation: cannot specify typeName/validatorName with multiple refs
+  // Validation: cannot specify typeName with multiple refs
   if (options.refs && options.refs.length > 1) {
     if (options.typeName) {
       throw new Error("Cannot specify typeName with multiple refs");
-    }
-    if (options.validatorName) {
-      throw new Error("Cannot specify validatorName with multiple refs");
     }
   }
 
@@ -58,7 +55,7 @@ function generateSingle(
   options: GenerateOptions,
 ): GenerateResult {
   const typeName = options.typeName || deriveTypeName(options.schemaPath);
-  const validatorName = options.validatorName || `validate${typeName}`;
+  const validatorName = `validate${typeName}`;
 
   // Compile schema using json-schema-library
   const schemaNode = compileSchema(schema, {
@@ -70,7 +67,6 @@ function generateSingle(
   });
 
   const validatorCode = generateValidator(schemaNode, validatorName, typeName, {
-    minify: options.minify,
     exportType: options.exportType || "named",
   });
 
@@ -100,10 +96,7 @@ function generateMultiple(
       refs.length === 1 && options.typeName
         ? options.typeName
         : generateTypeNameFromPath(ref);
-    const validatorNameForType =
-      refs.length === 1 && options.validatorName
-        ? options.validatorName
-        : generateValidatorName(typeName);
+    const validatorNameForType = generateValidatorName(typeName);
 
     // Check for duplicate type names
     if (typeNames.has(typeName)) {
@@ -143,7 +136,6 @@ function generateMultiple(
       validatorNameForType,
       typeName,
       {
-        minify: options.minify,
         exportType: options.exportType || "named",
       },
     );
