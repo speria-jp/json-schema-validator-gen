@@ -16,12 +16,8 @@ const { values } = parseArgs({
     },
     target: {
       type: "string",
-      short: "T",
-      multiple: true,
-    },
-    typeName: {
-      type: "string",
       short: "t",
+      multiple: true,
     },
     help: {
       type: "boolean",
@@ -39,23 +35,35 @@ Usage: json-schema-validator-gen -s <schema-path> -o <output-path> [options]
 Options:
   -s, --schema         Path to JSON Schema file (required)
   -o, --output         Output path for generated code (required)
-  -T, --target         JSON Schema target path (e.g., "#/$defs/User")
+  -t, --target         JSON Schema target path (e.g., "#/$defs/User")
                        Can be specified multiple times for multiple types
+                       Supports custom type names: "path=#/$defs/User,name=Foo"
                        Defaults to "#" (root schema)
-  -t, --typeName       TypeScript type name (default: derived from schema or target)
-                       Cannot be used with multiple --target options
   -h, --help           Show this help message
 
 Examples:
-  # Generate from root schema (default)
-  json-schema-validator-gen -s schema.json -o validator.ts -t User
+  # Generate from root schema (default, type name derived from file name)
+  json-schema-validator-gen -s schema.json -o validator.ts
 
-  # Generate from single target
-  json-schema-validator-gen -s schema.json -o validator.ts -T '#/$defs/User'
+  # Generate from single target (type name derived from target path)
+  json-schema-validator-gen -s schema.json -o validator.ts -t '#/$defs/User'
+
+  # Generate from single target with custom type name
+  json-schema-validator-gen -s schema.json -o validator.ts \\
+    -t 'path=#/$defs/User,name=CustomUser'
+
+  # Generate from root with custom type name
+  json-schema-validator-gen -s schema.json -o validator.ts \\
+    -t 'path=#,name=MySchema'
 
   # Generate multiple types from targets
   json-schema-validator-gen -s schema.json -o types.ts \\
-    -T '#/$defs/User' -T '#/$defs/Post'
+    -t '#/$defs/User' -t '#/$defs/Post'
+
+  # Generate multiple types with custom names
+  json-schema-validator-gen -s schema.json -o types.ts \\
+    -t 'path=#/$defs/User,name=AppUser' \\
+    -t 'path=#/$defs/Post,name=BlogPost'
 `);
   process.exit(values.help ? 0 : 1);
 }
@@ -66,22 +74,10 @@ async function main() {
       throw new Error("Both --schema and --output are required.");
     }
 
-    // Validation: cannot use typeName with multiple targets
-    const targets = values.target;
-    if (targets && targets.length > 1) {
-      if (values.typeName) {
-        console.error(
-          "Error: Cannot specify --typeName with multiple --target options",
-        );
-        process.exit(1);
-      }
-    }
-
     const results = await generate({
       schemaPath: values.schema,
       outputPath: values.output,
-      targets: targets,
-      typeName: values.typeName,
+      targets: values.target,
     });
 
     // Display results

@@ -26,13 +26,27 @@ bun add -D @speria-jp/json-schema-validator-gen
 
 ### CLI
 
-Using npx:
+Basic usage:
 
 ```bash
-npx @speria-jp/json-schema-validator-gen -s schema.json -o validator.ts
+# Generate from root schema (type name derived from file name)
+npx @speria-jp/json-schema-validator-gen -s user-schema.json -o validator.ts
+
+# Generate with custom type name
+npx @speria-jp/json-schema-validator-gen -s schema.json -o validator.ts \
+  -t 'path=#,name=User'
+
+# Generate from specific definition
+npx @speria-jp/json-schema-validator-gen -s schema.json -o validator.ts \
+  -t '#/$defs/User'
+
+# Generate multiple types with custom names
+npx @speria-jp/json-schema-validator-gen -s schema.json -o types.ts \
+  -t 'path=#/$defs/User,name=AppUser' \
+  -t 'path=#/$defs/Post,name=BlogPost'
 ```
 
-Or if installed locally in your project:
+If installed locally, you can also use your package manager directly:
 
 ```bash
 # npm
@@ -51,8 +65,7 @@ bun json-schema-validator-gen -s schema.json -o validator.ts
 Options:
 - `-s, --schema` - Path to JSON Schema file (required)
 - `-o, --output` - Output path for generated code (required)
-- `-T, --target` - JSON Schema target path (e.g., `#/$defs/User`). Can be specified multiple times to generate multiple types. Defaults to `#` (root schema)
-- `-t, --typeName` - TypeScript type name (default: derived from schema or target). Cannot be used with multiple `--target` options
+- `-t, --target` - JSON Schema target path (e.g., `#/$defs/User`). Can be specified multiple times to generate multiple types. Supports custom type names with `path=...,name=...` format. Defaults to `#` (root schema)
 - `-h, --help` - Show help message
 
 ### Programmatic API
@@ -60,11 +73,17 @@ Options:
 ```typescript
 import { generate } from '@speria-jp/json-schema-validator-gen';
 
-// Generate from root schema (default)
+// Generate from root schema (default, type name derived from file name)
+const result = await generate({
+  schemaPath: './user-schema.json',
+  outputPath: './validator.ts'
+});
+
+// Generate from root with custom type name
 const result = await generate({
   schemaPath: './schema.json',
   outputPath: './validator.ts',
-  typeName: 'User'
+  targets: ['path=#,name=User']
 });
 
 // Generate from specific targets
@@ -73,81 +92,16 @@ const results = await generate({
   outputPath: './types.ts',
   targets: ['#/$defs/User', '#/$defs/Post']
 });
-```
 
-### Generating Multiple Types from Sub-schemas
-
-You can generate multiple types from a single JSON Schema file using the `--target` option:
-
-```bash
-# Generate User and Post types from $defs
-npx json-schema-validator-gen -s schema.json -o types.ts \
-  -T '#/$defs/User' -T '#/$defs/Post'
-```
-
-Given a JSON Schema with `$defs`:
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "$defs": {
-    "Address": {
-      "type": "object",
-      "properties": {
-        "street": { "type": "string" },
-        "city": { "type": "string" },
-        "zipCode": { "type": "string" }
-      },
-      "required": ["street", "city"]
-    },
-    "User": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "email": { "type": "string" },
-        "address": { "$ref": "#/$defs/Address" }
-      },
-      "required": ["id", "name", "email"]
-    },
-    "Post": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "authorId": { "type": "string" }
-      },
-      "required": ["id", "title", "authorId"]
-    }
-  }
-}
-```
-
-The generator creates both types in a single file:
-
-```typescript
-export type User = {
-    id: string;
-    name: string;
-    email: string;
-    address?: {
-        street: string;
-        city: string;
-        zipCode?: string;
-    };
-};
-
-export type Post = {
-    id: string;
-    title: string;
-    authorId: string;
-};
-
-export function validateUser(value: unknown): value is User { /* ... */ }
-export function unsafeValidateUser(value: unknown): User { /* ... */ }
-
-export function validatePost(value: unknown): value is Post { /* ... */ }
-export function unsafeValidatePost(value: unknown): Post { /* ... */ }
+// Generate with custom type names
+const results = await generate({
+  schemaPath: './schema.json',
+  outputPath: './types.ts',
+  targets: [
+    'path=#/$defs/User,name=AppUser',
+    'path=#/$defs/Post,name=BlogPost'
+  ]
+});
 ```
 
 ### Example
@@ -231,6 +185,81 @@ export function validateUser(value: unknown): value is User {
     // ... additional validations for optional properties
     return true;
 }
+```
+
+### Multiple Types Example
+
+You can generate multiple types from a single JSON Schema file using the `--target` option:
+
+```bash
+# Generate User and Post types from $defs (type names derived from path)
+npx json-schema-validator-gen -s schema.json -o types.ts \
+  -t '#/$defs/User' -t '#/$defs/Post'
+```
+
+Given a JSON Schema with `$defs`:
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "Address": {
+      "type": "object",
+      "properties": {
+        "street": { "type": "string" },
+        "city": { "type": "string" },
+        "zipCode": { "type": "string" }
+      },
+      "required": ["street", "city"]
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "$ref": "#/$defs/Address" }
+      },
+      "required": ["id", "name", "email"]
+    },
+    "Post": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "authorId": { "type": "string" }
+      },
+      "required": ["id", "title", "authorId"]
+    }
+  }
+}
+```
+
+The generator creates both types in a single file:
+
+```typescript
+export type User = {
+    id: string;
+    name: string;
+    email: string;
+    address?: {
+        street: string;
+        city: string;
+        zipCode?: string;
+    };
+};
+
+export type Post = {
+    id: string;
+    title: string;
+    authorId: string;
+};
+
+export function validateUser(value: unknown): value is User { /* ... */ }
+export function unsafeValidateUser(value: unknown): User { /* ... */ }
+
+export function validatePost(value: unknown): value is Post { /* ... */ }
+export function unsafeValidatePost(value: unknown): Post { /* ... */ }
 ```
 
 ## Supported JSON Schema Features

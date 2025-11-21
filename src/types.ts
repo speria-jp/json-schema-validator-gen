@@ -1,9 +1,16 @@
+/** Parsed target information */
+export interface Target {
+  /** JSON Schema path (e.g., "#/$defs/User") */
+  path: string;
+  /** Optional custom type name */
+  name?: string;
+}
+
 export interface GenerateOptions {
   schemaPath: string;
   outputPath: string;
   /** JSON Schema target paths to generate (e.g., ["#/$defs/User", "#/$defs/Post"]). Defaults to ["#"] (root) */
   targets?: string[];
-  typeName?: string;
 }
 
 export interface GenerateResult {

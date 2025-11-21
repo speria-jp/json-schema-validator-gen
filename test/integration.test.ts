@@ -12,7 +12,7 @@ describe("Generated code snapshots", () => {
 
   // Generate user-validator
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "user-schema.json")} -o ${join(generatedDir, "user-validator.ts")} -t User`,
+    `bun run ${cliPath} -s ${join(examplesDir, "user-schema.json")} -o ${join(generatedDir, "user-validator.ts")} -t "path=#,name=User"`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -21,7 +21,7 @@ describe("Generated code snapshots", () => {
 
   // Generate complex-validator
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "complex-schema.json")} -o ${join(generatedDir, "complex-validator.ts")} -t Complex`,
+    `bun run ${cliPath} -s ${join(examplesDir, "complex-schema.json")} -o ${join(generatedDir, "complex-validator.ts")} -t "path=#,name=Complex"`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -30,7 +30,7 @@ describe("Generated code snapshots", () => {
 
   // Generate ref-validator
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "ref-schema.json")} -o ${join(generatedDir, "ref-validator.ts")} -t Ref`,
+    `bun run ${cliPath} -s ${join(examplesDir, "ref-schema.json")} -o ${join(generatedDir, "ref-validator.ts")} -t "path=#,name=Ref"`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -39,7 +39,7 @@ describe("Generated code snapshots", () => {
 
   // Generate multi-types (multiple targets)
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -T '#/$defs/User' -T '#/$defs/Post' -T '#/$defs/Comment'`,
+    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -t '#/$defs/User' -t '#/$defs/Post' -t '#/$defs/Comment'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -86,7 +86,7 @@ describe("TypeScript type checking tests", () => {
 
   // Generate all validators
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "user-schema.json")} -o ${join(generatedDir, "user-validator.ts")} -t User`,
+    `bun run ${cliPath} -s ${join(examplesDir, "user-schema.json")} -o ${join(generatedDir, "user-validator.ts")} -t "path=#,name=User"`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -94,7 +94,7 @@ describe("TypeScript type checking tests", () => {
   );
 
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "complex-schema.json")} -o ${join(generatedDir, "complex-validator.ts")} -t Complex`,
+    `bun run ${cliPath} -s ${join(examplesDir, "complex-schema.json")} -o ${join(generatedDir, "complex-validator.ts")} -t "path=#,name=Complex"`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -102,7 +102,7 @@ describe("TypeScript type checking tests", () => {
   );
 
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "ref-schema.json")} -o ${join(generatedDir, "ref-validator.ts")} -t Ref`,
+    `bun run ${cliPath} -s ${join(examplesDir, "ref-schema.json")} -o ${join(generatedDir, "ref-validator.ts")} -t "path=#,name=Ref"`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -110,7 +110,7 @@ describe("TypeScript type checking tests", () => {
   );
 
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -T '#/$defs/User' -T '#/$defs/Post' -T '#/$defs/Comment'`,
+    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -t '#/$defs/User' -t '#/$defs/Post' -t '#/$defs/Comment'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -138,7 +138,7 @@ describe("Runtime validation tests", () => {
 
   // Generate all validators
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "user-schema.json")} -o ${join(generatedDir, "user-validator.ts")} -t User`,
+    `bun run ${cliPath} -s ${join(examplesDir, "user-schema.json")} -o ${join(generatedDir, "user-validator.ts")} -t "path=#,name=User"`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -146,7 +146,7 @@ describe("Runtime validation tests", () => {
   );
 
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "complex-schema.json")} -o ${join(generatedDir, "complex-validator.ts")} -t Complex`,
+    `bun run ${cliPath} -s ${join(examplesDir, "complex-schema.json")} -o ${join(generatedDir, "complex-validator.ts")} -t "path=#,name=Complex"`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -154,7 +154,7 @@ describe("Runtime validation tests", () => {
   );
 
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "ref-schema.json")} -o ${join(generatedDir, "ref-validator.ts")} -t Ref`,
+    `bun run ${cliPath} -s ${join(examplesDir, "ref-schema.json")} -o ${join(generatedDir, "ref-validator.ts")} -t "path=#,name=Ref"`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -162,7 +162,7 @@ describe("Runtime validation tests", () => {
   );
 
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -T '#/$defs/User' -T '#/$defs/Post' -T '#/$defs/Comment'`,
+    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -t '#/$defs/User' -t '#/$defs/Post' -t '#/$defs/Comment'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
