@@ -53,8 +53,6 @@ Options:
 - `-o, --output` - Output path for generated code (required)
 - `-T, --target` - JSON Schema target path (e.g., `#/$defs/User`). Can be specified multiple times to generate multiple types. Defaults to `#` (root schema)
 - `-t, --typeName` - TypeScript type name (default: derived from schema or target). Cannot be used with multiple `--target` options
-- `-n, --namespace` - Namespace for generated types
-- `-e, --exportType` - Export type: 'named' or 'default' (default: 'named')
 - `-h, --help` - Show help message
 
 ### Programmatic API

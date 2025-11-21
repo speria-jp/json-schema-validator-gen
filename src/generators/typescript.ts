@@ -4,14 +4,9 @@ import { getTupleInfo } from "../utils/tuple-helpers";
 
 const { factory } = ts;
 
-interface TypeGenOptions {
-  namespace?: string;
-}
-
 export function generateTypeScript(
   node: SchemaNode,
   typeName: string,
-  options: TypeGenOptions = {},
 ): string {
   const typeNode = generateTypeNode(node);
 
@@ -23,18 +18,7 @@ export function generateTypeScript(
     typeNode,
   );
 
-  let statements: ts.Statement[] = [typeAlias];
-
-  // Wrap in namespace if specified
-  if (options.namespace) {
-    const namespaceDecl = factory.createModuleDeclaration(
-      [factory.createModifier(ts.SyntaxKind.ExportKeyword)],
-      factory.createIdentifier(options.namespace),
-      factory.createModuleBlock(statements),
-      ts.NodeFlags.Namespace,
-    );
-    statements = [namespaceDecl];
-  }
+  const statements: ts.Statement[] = [typeAlias];
 
   // Create source file and print
   const sourceFile = factory.createSourceFile(
