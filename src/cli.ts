@@ -14,9 +14,9 @@ const { values } = parseArgs({
       type: "string",
       short: "o",
     },
-    ref: {
+    target: {
       type: "string",
-      short: "r",
+      short: "T",
       multiple: true,
     },
     typeName: {
@@ -47,24 +47,25 @@ Usage: json-schema-validator-gen -s <schema-path> -o <output-path> [options]
 Options:
   -s, --schema         Path to JSON Schema file (required)
   -o, --output         Output path for generated code (required)
-  -r, --ref            JSON Schema reference path (e.g., "#/$defs/User")
+  -T, --target         JSON Schema target path (e.g., "#/$defs/User")
                        Can be specified multiple times for multiple types
-  -t, --typeName       TypeScript type name (default: derived from schema or ref)
-                       Cannot be used with multiple --ref options
+                       Defaults to "#" (root schema)
+  -t, --typeName       TypeScript type name (default: derived from schema or target)
+                       Cannot be used with multiple --target options
   -n, --namespace      Namespace for generated types
   -e, --exportType     Export type: 'named' or 'default' (default: 'named')
   -h, --help           Show this help message
 
 Examples:
-  # Generate from root schema
+  # Generate from root schema (default)
   json-schema-validator-gen -s schema.json -o validator.ts -t User
 
-  # Generate from single ref
-  json-schema-validator-gen -s schema.json -o validator.ts -r '#/$defs/User'
+  # Generate from single target
+  json-schema-validator-gen -s schema.json -o validator.ts -T '#/$defs/User'
 
-  # Generate multiple types from refs
+  # Generate multiple types from targets
   json-schema-validator-gen -s schema.json -o types.ts \\
-    -r '#/$defs/User' -r '#/$defs/Post'
+    -T '#/$defs/User' -T '#/$defs/Post'
 `);
   process.exit(values.help ? 0 : 1);
 }
@@ -75,12 +76,12 @@ async function main() {
       throw new Error("Both --schema and --output are required.");
     }
 
-    // Validation: cannot use typeName with multiple refs
-    const refs = values.ref;
-    if (refs && refs.length > 1) {
+    // Validation: cannot use typeName with multiple targets
+    const targets = values.target;
+    if (targets && targets.length > 1) {
       if (values.typeName) {
         console.error(
-          "Error: Cannot specify --typeName with multiple --ref options",
+          "Error: Cannot specify --typeName with multiple --target options",
         );
         process.exit(1);
       }
@@ -89,7 +90,7 @@ async function main() {
     const results = await generate({
       schemaPath: values.schema,
       outputPath: values.output,
-      refs: refs,
+      targets: targets,
       typeName: values.typeName,
       namespace: values.namespace,
       exportType: values.exportType as "named" | "default" | undefined,

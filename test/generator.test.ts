@@ -1247,9 +1247,9 @@ describe("generate", () => {
     expect(result.validatorCode).toContain("([] as string[]).includes(key1)");
   });
 
-  // Step 3: Tests for refs option
-  describe("generate with refs option", () => {
-    test("should generate single ref", async () => {
+  // Step 3: Tests for targets option
+  describe("generate with targets option", () => {
+    test("should generate single target", async () => {
       const schema = {
         $defs: {
           User: {
@@ -1266,7 +1266,7 @@ describe("generate", () => {
       const results = await generate({
         schemaPath,
         outputPath,
-        refs: ["#/$defs/User"],
+        targets: ["#/$defs/User"],
       });
 
       expect(results).toHaveLength(1);
@@ -1274,7 +1274,7 @@ describe("generate", () => {
       expect(results[0].validatorName).toBe("validateUser");
     });
 
-    test("should generate multiple refs", async () => {
+    test("should generate multiple targets", async () => {
       const schema = {
         $defs: {
           User: { type: "object", properties: { name: { type: "string" } } },
@@ -1287,7 +1287,7 @@ describe("generate", () => {
       const results = await generate({
         schemaPath,
         outputPath,
-        refs: ["#/$defs/User", "#/$defs/Post"],
+        targets: ["#/$defs/User", "#/$defs/Post"],
       });
 
       expect(results).toHaveLength(2);
@@ -1322,7 +1322,7 @@ describe("generate", () => {
       const results = await generate({
         schemaPath,
         outputPath,
-        refs: ["#/$defs/User"],
+        targets: ["#/$defs/User"],
       });
 
       expect(results).toHaveLength(1);
@@ -1330,7 +1330,7 @@ describe("generate", () => {
       expect(results[0].typeDefinition).toContain("address?:");
     });
 
-    test("should handle multiple refs with cross-references", async () => {
+    test("should handle multiple targets with cross-references", async () => {
       const schema = {
         $defs: {
           Address: {
@@ -1361,7 +1361,7 @@ describe("generate", () => {
       const results = await generate({
         schemaPath,
         outputPath,
-        refs: ["#/$defs/User", "#/$defs/Post"],
+        targets: ["#/$defs/User", "#/$defs/Post"],
       });
 
       expect(results).toHaveLength(2);
@@ -1370,7 +1370,7 @@ describe("generate", () => {
 
   // Step 4: Error handling tests
   describe("generate error handling", () => {
-    test("should throw error when multiple refs with typeName", async () => {
+    test("should throw error when multiple targets with typeName", async () => {
       const schema = { $defs: { User: {}, Post: {} } };
       await writeFile(schemaPath, JSON.stringify(schema));
 
@@ -1378,13 +1378,13 @@ describe("generate", () => {
         generate({
           schemaPath,
           outputPath,
-          refs: ["#/$defs/User", "#/$defs/Post"],
+          targets: ["#/$defs/User", "#/$defs/Post"],
           typeName: "MyType",
         }),
-      ).rejects.toThrow("Cannot specify typeName with multiple refs");
+      ).rejects.toThrow("Cannot specify typeName with multiple targets");
     });
 
-    test("should throw error for non-existent ref", async () => {
+    test("should throw error for non-existent target", async () => {
       const schema = { $defs: {} };
       await writeFile(schemaPath, JSON.stringify(schema));
 
@@ -1392,7 +1392,7 @@ describe("generate", () => {
         generate({
           schemaPath,
           outputPath,
-          refs: ["#/$defs/NonExistent"],
+          targets: ["#/$defs/NonExistent"],
         }),
       ).rejects.toThrow("Schema not found at path");
     });
@@ -1410,7 +1410,7 @@ describe("generate", () => {
         generate({
           schemaPath,
           outputPath,
-          refs: ["#/$defs/User", "#/$defs/user"],
+          targets: ["#/$defs/User", "#/$defs/user"],
         }),
       ).rejects.toThrow("Duplicate type name");
     });
