@@ -22,25 +22,21 @@ import { getSchemaAtPath } from "./utils/ref-parser";
 export async function generate(
   options: GenerateOptions,
 ): Promise<GenerateResult[]> {
-  // Validation: cannot specify typeName with multiple refs
-  if (options.refs && options.refs.length > 1) {
-    if (options.typeName) {
-      throw new Error("Cannot specify typeName with multiple refs");
-    }
+  // Default to root schema if no targets specified
+  const targets =
+    options.targets && options.targets.length > 0 ? options.targets : ["#"];
+
+  // Validation: cannot specify typeName with multiple targets
+  if (targets.length > 1 && options.typeName) {
+    throw new Error("Cannot specify typeName with multiple targets");
   }
 
   // Read and parse schema
   const schemaContent = await readFile(options.schemaPath, "utf-8");
   const schema = JSON.parse(schemaContent);
 
-  // Generate types
-  let results: GenerateResult[];
-  if (options.refs && options.refs.length > 0) {
-    results = generateMultiple(schema, options);
-  } else {
-    const result = generateSingle(schema, options);
-    results = [result];
-  }
+  // Generate types for all targets
+  const results = generateForTargets(schema, { ...options, targets });
 
   // Write output to file
   await writeOutput(results, options.outputPath, {
@@ -50,76 +46,53 @@ export async function generate(
   return results;
 }
 
-function generateSingle(
+function generateForTargets(
   schema: JsonSchema,
-  options: GenerateOptions,
-): GenerateResult {
-  const typeName = options.typeName || deriveTypeName(options.schemaPath);
-  const validatorName = `validate${typeName}`;
-
-  // Compile schema using json-schema-library
-  const schemaNode = compileSchema(schema, {
-    drafts: [draft04, draft06, draft07, draft2019, draft2020],
-  });
-
-  const typeDefinition = generateTypeScript(schemaNode, typeName, {
-    namespace: options.namespace,
-  });
-
-  const validatorCode = generateValidator(schemaNode, validatorName, typeName, {
-    exportType: options.exportType || "named",
-  });
-
-  return {
-    validatorCode,
-    typeDefinition,
-    typeName,
-    validatorName,
-  };
-}
-
-function generateMultiple(
-  schema: JsonSchema,
-  options: GenerateOptions,
+  options: GenerateOptions & { targets: string[] },
 ): GenerateResult[] {
-  const refs = options.refs || [];
+  const { targets } = options;
   const types: GenerateResult[] = [];
   const typeNames = new Set<string>();
 
-  // Process each ref
-  for (const ref of refs) {
-    // Get schema at ref path
-    const subSchema = getSchemaAtPath(schema, ref);
+  // Process each target
+  for (const target of targets) {
+    // Get schema at target path (root "#" or specific path like "#/$defs/User")
+    const targetSchema =
+      target === "#" ? schema : getSchemaAtPath(schema, target);
 
-    // Generate type name from ref path
+    // Generate type name
     const typeName =
-      refs.length === 1 && options.typeName
+      targets.length === 1 && options.typeName
         ? options.typeName
-        : generateTypeNameFromPath(ref);
+        : target === "#"
+          ? deriveTypeName(options.schemaPath)
+          : generateTypeNameFromPath(target);
     const validatorNameForType = generateValidatorName(typeName);
 
     // Check for duplicate type names
     if (typeNames.has(typeName)) {
       throw new Error(
-        `Duplicate type name "${typeName}" generated from refs. Please ensure ref paths result in unique type names.`,
+        `Duplicate type name "${typeName}" generated from targets. Please ensure target paths result in unique type names.`,
       );
     }
     typeNames.add(typeName);
 
-    // Compile the sub-schema with root schema context for $ref resolution
+    // Compile the schema with root schema context for $ref resolution
     // Merge $defs and definitions from root schema so $ref can be resolved
-    // Sub-schema's definitions take precedence over root schema's definitions
-    const schemaWithDefs: JsonSchema = {
-      ...subSchema,
-      $defs: {
-        ...(schema.$defs || {}),
-        ...(subSchema.$defs || {}),
-      },
-      definitions: {
-        ...(schema.definitions || {}),
-        ...(subSchema.definitions || {}),
-      },
-    };
+    const schemaWithDefs: JsonSchema =
+      target === "#"
+        ? schema
+        : {
+            ...targetSchema,
+            $defs: {
+              ...(schema.$defs || {}),
+              ...(targetSchema.$defs || {}),
+            },
+            definitions: {
+              ...(schema.definitions || {}),
+              ...(targetSchema.definitions || {}),
+            },
+          };
 
     const schemaNode = compileSchema(schemaWithDefs, {
       drafts: [draft04, draft06, draft07, draft2019, draft2020],

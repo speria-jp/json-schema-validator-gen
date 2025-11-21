@@ -51,8 +51,8 @@ bun json-schema-validator-gen -s schema.json -o validator.ts
 Options:
 - `-s, --schema` - Path to JSON Schema file (required)
 - `-o, --output` - Output path for generated code (required)
-- `-r, --ref` - JSON Schema reference path (e.g., `#/$defs/User`). Can be specified multiple times to generate multiple types
-- `-t, --typeName` - TypeScript type name (default: derived from schema or ref). Cannot be used with multiple `--ref` options
+- `-T, --target` - JSON Schema target path (e.g., `#/$defs/User`). Can be specified multiple times to generate multiple types. Defaults to `#` (root schema)
+- `-t, --typeName` - TypeScript type name (default: derived from schema or target). Cannot be used with multiple `--target` options
 - `-n, --namespace` - Namespace for generated types
 - `-e, --exportType` - Export type: 'named' or 'default' (default: 'named')
 - `-h, --help` - Show help message
@@ -62,21 +62,29 @@ Options:
 ```typescript
 import { generate } from '@speria-jp/json-schema-validator-gen';
 
+// Generate from root schema (default)
 const result = await generate({
   schemaPath: './schema.json',
   outputPath: './validator.ts',
   typeName: 'User'
 });
+
+// Generate from specific targets
+const results = await generate({
+  schemaPath: './schema.json',
+  outputPath: './types.ts',
+  targets: ['#/$defs/User', '#/$defs/Post']
+});
 ```
 
 ### Generating Multiple Types from Sub-schemas
 
-You can generate multiple types from a single JSON Schema file using the `--ref` option:
+You can generate multiple types from a single JSON Schema file using the `--target` option:
 
 ```bash
 # Generate User and Post types from $defs
 npx json-schema-validator-gen -s schema.json -o types.ts \
-  -r '#/$defs/User' -r '#/$defs/Post'
+  -T '#/$defs/User' -T '#/$defs/Post'
 ```
 
 Given a JSON Schema with `$defs`:

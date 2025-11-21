@@ -37,9 +37,9 @@ describe("Generated code snapshots", () => {
     },
   );
 
-  // Generate multi-types (multiple refs)
+  // Generate multi-types (multiple targets)
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -r '#/$defs/User' -r '#/$defs/Post' -r '#/$defs/Comment'`,
+    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -T '#/$defs/User' -T '#/$defs/Post' -T '#/$defs/Comment'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -110,7 +110,7 @@ describe("TypeScript type checking tests", () => {
   );
 
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -r '#/$defs/User' -r '#/$defs/Post' -r '#/$defs/Comment'`,
+    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -T '#/$defs/User' -T '#/$defs/Post' -T '#/$defs/Comment'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -162,7 +162,7 @@ describe("Runtime validation tests", () => {
   );
 
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -r '#/$defs/User' -r '#/$defs/Post' -r '#/$defs/Comment'`,
+    `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -T '#/$defs/User' -T '#/$defs/Post' -T '#/$defs/Comment'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
