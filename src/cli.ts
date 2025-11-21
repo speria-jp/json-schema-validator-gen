@@ -23,10 +23,6 @@ const { values } = parseArgs({
       type: "string",
       short: "t",
     },
-    validatorName: {
-      type: "string",
-      short: "v",
-    },
     namespace: {
       type: "string",
       short: "n",
@@ -34,10 +30,6 @@ const { values } = parseArgs({
     exportType: {
       type: "string",
       short: "e",
-    },
-    minify: {
-      type: "boolean",
-      short: "m",
     },
     help: {
       type: "boolean",
@@ -59,11 +51,8 @@ Options:
                        Can be specified multiple times for multiple types
   -t, --typeName       TypeScript type name (default: derived from schema or ref)
                        Cannot be used with multiple --ref options
-  -v, --validatorName  Validator function name (default: validate{TypeName})
-                       Cannot be used with multiple --ref options
   -n, --namespace      Namespace for generated types
   -e, --exportType     Export type: 'named' or 'default' (default: 'named')
-  -m, --minify         Minify generated code (default: false)
   -h, --help           Show this help message
 
 Examples:
@@ -86,18 +75,12 @@ async function main() {
       throw new Error("Both --schema and --output are required.");
     }
 
-    // Validation: cannot use typeName/validatorName with multiple refs
+    // Validation: cannot use typeName with multiple refs
     const refs = values.ref;
     if (refs && refs.length > 1) {
       if (values.typeName) {
         console.error(
           "Error: Cannot specify --typeName with multiple --ref options",
-        );
-        process.exit(1);
-      }
-      if (values.validatorName) {
-        console.error(
-          "Error: Cannot specify --validatorName with multiple --ref options",
         );
         process.exit(1);
       }
@@ -108,10 +91,8 @@ async function main() {
       outputPath: values.output,
       refs: refs,
       typeName: values.typeName,
-      validatorName: values.validatorName,
       namespace: values.namespace,
       exportType: values.exportType as "named" | "default" | undefined,
-      minify: values.minify,
     });
 
     // Display results

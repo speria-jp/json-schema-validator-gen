@@ -568,47 +568,6 @@ describe("generate", () => {
     expect(result.validatorCode).toContain("export default validate");
   });
 
-  test("should generate minified code when minify option is true", async () => {
-    const schema = { type: "string" };
-
-    await writeFile(schemaPath, JSON.stringify(schema));
-
-    const results = await generate({
-      schemaPath,
-      outputPath,
-      minify: true,
-      typeName: "TestString",
-    });
-
-    expect(results).toHaveLength(1);
-
-    const result = results[0];
-
-    // Minified code has fewer line breaks and comments
-    expect(result.validatorCode).toBeDefined();
-    expect(result.validatorCode.length).toBeGreaterThan(0);
-  });
-
-  test("should use custom validator name", async () => {
-    const schema = { type: "string" };
-
-    await writeFile(schemaPath, JSON.stringify(schema));
-
-    const results = await generate({
-      schemaPath,
-      outputPath,
-      validatorName: "customValidator",
-      typeName: "TestString",
-    });
-
-    expect(results).toHaveLength(1);
-
-    const result = results[0];
-
-    expect(result.validatorName).toBe("customValidator");
-    expect(result.validatorCode).toContain("function customValidator");
-  });
-
   test("should handle Draft-06 const keyword", async () => {
     const schema = {
       $schema: "http://json-schema.org/draft-06/schema#",
@@ -1423,20 +1382,6 @@ describe("generate", () => {
           typeName: "MyType",
         }),
       ).rejects.toThrow("Cannot specify typeName with multiple refs");
-    });
-
-    test("should throw error when multiple refs with validatorName", async () => {
-      const schema = { $defs: { User: {}, Post: {} } };
-      await writeFile(schemaPath, JSON.stringify(schema));
-
-      await expect(
-        generate({
-          schemaPath,
-          outputPath,
-          refs: ["#/$defs/User", "#/$defs/Post"],
-          validatorName: "validate",
-        }),
-      ).rejects.toThrow("Cannot specify validatorName with multiple refs");
     });
 
     test("should throw error for non-existent ref", async () => {

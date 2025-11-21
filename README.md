@@ -53,10 +53,8 @@ Options:
 - `-o, --output` - Output path for generated code (required)
 - `-r, --ref` - JSON Schema reference path (e.g., `#/$defs/User`). Can be specified multiple times to generate multiple types
 - `-t, --typeName` - TypeScript type name (default: derived from schema or ref). Cannot be used with multiple `--ref` options
-- `-v, --validatorName` - Validator function name (default: validate{TypeName}). Cannot be used with multiple `--ref` options
 - `-n, --namespace` - Namespace for generated types
 - `-e, --exportType` - Export type: 'named' or 'default' (default: 'named')
-- `-m, --minify` - Minify generated code (default: false)
 - `-h, --help` - Show help message
 
 ### Programmatic API
@@ -67,8 +65,7 @@ import { generate } from '@speria-jp/json-schema-validator-gen';
 const result = await generate({
   schemaPath: './schema.json',
   outputPath: './validator.ts',
-  typeName: 'User',
-  validatorName: 'validateUser'
+  typeName: 'User'
 });
 ```
 
