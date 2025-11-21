@@ -141,10 +141,7 @@ function deriveTypeName(schemaPath: string): string {
     .join("");
 }
 
-function combineOutput(
-  typeDefinition: string,
-  validatorCode: string,
-): string {
+function combineOutput(typeDefinition: string, validatorCode: string): string {
   // Add header only once at the top
   return `${getGeneratedHeader()}${typeDefinition}
 

@@ -4,10 +4,7 @@ import { getTupleInfo } from "../utils/tuple-helpers";
 
 const { factory } = ts;
 
-export function generateTypeScript(
-  node: SchemaNode,
-  typeName: string,
-): string {
+export function generateTypeScript(node: SchemaNode, typeName: string): string {
   const typeNode = generateTypeNode(node);
 
   // Create type alias declaration
