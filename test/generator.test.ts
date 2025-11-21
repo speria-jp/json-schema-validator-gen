@@ -31,7 +31,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "Person",
+      targets: ["path=#,name=Person"],
     });
 
     expect(results).toHaveLength(1);
@@ -119,7 +119,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "Tags",
+      targets: ["path=#,name=Tags"],
     });
 
     expect(results).toHaveLength(1);
@@ -150,7 +150,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "TupleTest",
+      targets: ["path=#,name=TupleTest"],
     });
 
     expect(results).toHaveLength(1);
@@ -195,7 +195,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "UserWithAddress",
+      targets: ["path=#,name=UserWithAddress"],
     });
 
     expect(results).toHaveLength(1);
@@ -234,7 +234,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "User",
+      targets: ["path=#,name=User"],
     });
 
     expect(results).toHaveLength(1);
@@ -268,7 +268,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "Product",
+      targets: ["path=#,name=Product"],
     });
 
     expect(results).toHaveLength(1);
@@ -298,7 +298,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "Counter",
+      targets: ["path=#,name=Counter"],
     });
 
     expect(results).toHaveLength(1);
@@ -329,7 +329,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "TaggedItem",
+      targets: ["path=#,name=TaggedItem"],
     });
 
     expect(results).toHaveLength(1);
@@ -360,7 +360,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "RestrictedObject",
+      targets: ["path=#,name=RestrictedObject"],
     });
 
     expect(results).toHaveLength(1);
@@ -389,7 +389,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "UnionValue",
+      targets: ["path=#,name=UnionValue"],
     });
 
     expect(results).toHaveLength(1);
@@ -425,7 +425,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "AnyOfValue",
+      targets: ["path=#,name=AnyOfValue"],
     });
 
     expect(results).toHaveLength(1);
@@ -457,7 +457,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "ConstValues",
+      targets: ["path=#,name=ConstValues"],
     });
 
     expect(results).toHaveLength(1);
@@ -487,7 +487,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "NullableData",
+      targets: ["path=#,name=NullableData"],
     });
 
     expect(results).toHaveLength(1);
@@ -514,7 +514,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "BooleanFlags",
+      targets: ["path=#,name=BooleanFlags"],
     });
 
     expect(results).toHaveLength(1);
@@ -541,7 +541,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "Draft06Test",
+      targets: ["path=#,name=Draft06Test"],
     });
 
     expect(results).toHaveLength(1);
@@ -575,7 +575,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "ConditionalSchema",
+      targets: ["path=#,name=ConditionalSchema"],
     });
 
     expect(results).toHaveLength(1);
@@ -605,7 +605,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "ReadWriteTest",
+      targets: ["path=#,name=ReadWriteTest"],
     });
 
     expect(results).toHaveLength(1);
@@ -642,7 +642,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "DependentTest",
+      targets: ["path=#,name=DependentTest"],
     });
 
     expect(results).toHaveLength(1);
@@ -690,7 +690,7 @@ describe("generate", () => {
       const results = await generate({
         schemaPath,
         outputPath,
-        typeName: testCase.typeName,
+        targets: [`path=#,name=${testCase.typeName}`],
       });
 
       expect(results).toHaveLength(1);
@@ -726,7 +726,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "MixedFeatures",
+      targets: ["path=#,name=MixedFeatures"],
     });
 
     expect(results).toHaveLength(1);
@@ -755,7 +755,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "UnsupportedFeatures",
+      targets: ["path=#,name=UnsupportedFeatures"],
     });
 
     expect(results).toHaveLength(1);
@@ -787,7 +787,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "PrefixItemsTest",
+      targets: ["path=#,name=PrefixItemsTest"],
     });
 
     expect(results).toHaveLength(1);
@@ -816,7 +816,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "NoSchemaDefault",
+      targets: ["path=#,name=NoSchemaDefault"],
     });
 
     expect(results).toHaveLength(1);
@@ -863,7 +863,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "AllOfComposition",
+      targets: ["path=#,name=AllOfComposition"],
     });
 
     expect(results).toHaveLength(1);
@@ -907,7 +907,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "FormatValidation",
+      targets: ["path=#,name=FormatValidation"],
     });
 
     expect(results).toHaveLength(1);
@@ -949,7 +949,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "PersonWithAddress",
+      targets: ["path=#,name=PersonWithAddress"],
     });
 
     expect(results).toHaveLength(1);
@@ -996,7 +996,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "MixedRefs",
+      targets: ["path=#,name=MixedRefs"],
     });
 
     expect(results).toHaveLength(1);
@@ -1033,7 +1033,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "PatternTest",
+      targets: ["path=#,name=PatternTest"],
     });
 
     expect(results).toHaveLength(1);
@@ -1071,7 +1071,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "InvalidPatternTest",
+      targets: ["path=#,name=InvalidPatternTest"],
     });
 
     expect(results).toHaveLength(1);
@@ -1129,7 +1129,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "MixedRefStyles",
+      targets: ["path=#,name=MixedRefStyles"],
     });
 
     expect(results).toHaveLength(1);
@@ -1155,7 +1155,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "EmptyObject",
+      targets: ["path=#,name=EmptyObject"],
     });
 
     expect(results).toHaveLength(1);
@@ -1185,7 +1185,7 @@ describe("generate", () => {
     const results = await generate({
       schemaPath,
       outputPath,
-      typeName: "StrictEmptyObject",
+      targets: ["path=#,name=StrictEmptyObject"],
     });
 
     expect(results).toHaveLength(1);
@@ -1328,20 +1328,6 @@ describe("generate", () => {
 
   // Step 4: Error handling tests
   describe("generate error handling", () => {
-    test("should throw error when multiple targets with typeName", async () => {
-      const schema = { $defs: { User: {}, Post: {} } };
-      await writeFile(schemaPath, JSON.stringify(schema));
-
-      await expect(
-        generate({
-          schemaPath,
-          outputPath,
-          targets: ["#/$defs/User", "#/$defs/Post"],
-          typeName: "MyType",
-        }),
-      ).rejects.toThrow("Cannot specify typeName with multiple targets");
-    });
-
     test("should throw error for non-existent target", async () => {
       const schema = { $defs: {} };
       await writeFile(schemaPath, JSON.stringify(schema));
@@ -1369,6 +1355,162 @@ describe("generate", () => {
           schemaPath,
           outputPath,
           targets: ["#/$defs/User", "#/$defs/user"],
+        }),
+      ).rejects.toThrow("Duplicate type name");
+    });
+  });
+
+  // Tests for custom type names in target format
+  describe("generate with custom type names", () => {
+    test("should generate with custom type name using key-value format", async () => {
+      const schema = {
+        $defs: {
+          User: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+            },
+          },
+        },
+      };
+
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      const results = await generate({
+        schemaPath,
+        outputPath,
+        targets: ["path=#/$defs/User,name=CustomUser"],
+      });
+
+      expect(results).toHaveLength(1);
+      expect(results[0].typeName).toBe("CustomUser");
+      expect(results[0].validatorName).toBe("validateCustomUser");
+    });
+
+    test("should generate root schema with custom name", async () => {
+      const schema = {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+        },
+      };
+
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      const results = await generate({
+        schemaPath,
+        outputPath,
+        targets: ["path=#,name=RootSchema"],
+      });
+
+      expect(results).toHaveLength(1);
+      expect(results[0].typeName).toBe("RootSchema");
+      expect(results[0].validatorName).toBe("validateRootSchema");
+    });
+
+    test("should generate multiple types with custom names", async () => {
+      const schema = {
+        $defs: {
+          User: { type: "object", properties: { name: { type: "string" } } },
+          Post: { type: "object", properties: { title: { type: "string" } } },
+        },
+      };
+
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      const results = await generate({
+        schemaPath,
+        outputPath,
+        targets: [
+          "path=#/$defs/User,name=AppUser",
+          "path=#/$defs/Post,name=BlogPost",
+        ],
+      });
+
+      expect(results).toHaveLength(2);
+      expect(results[0].typeName).toBe("AppUser");
+      expect(results[0].validatorName).toBe("validateAppUser");
+      expect(results[1].typeName).toBe("BlogPost");
+      expect(results[1].validatorName).toBe("validateBlogPost");
+    });
+
+    test("should support mixed format (simple and key-value)", async () => {
+      const schema = {
+        $defs: {
+          User: { type: "object", properties: { name: { type: "string" } } },
+          Post: { type: "object", properties: { title: { type: "string" } } },
+        },
+      };
+
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      const results = await generate({
+        schemaPath,
+        outputPath,
+        targets: ["#/$defs/User", "path=#/$defs/Post,name=BlogPost"],
+      });
+
+      expect(results).toHaveLength(2);
+      expect(results[0].typeName).toBe("User");
+      expect(results[1].typeName).toBe("BlogPost");
+    });
+
+    test("should use custom name from target format", async () => {
+      const schema = {
+        $defs: {
+          User: { type: "object", properties: { name: { type: "string" } } },
+        },
+      };
+
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      const results = await generate({
+        schemaPath,
+        outputPath,
+        targets: ["path=#/$defs/User,name=CustomUser"],
+      });
+
+      expect(results).toHaveLength(1);
+      expect(results[0].typeName).toBe("CustomUser");
+    });
+
+    test("should use custom name when specified", async () => {
+      const schema = {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+        },
+      };
+
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      const results = await generate({
+        schemaPath,
+        outputPath,
+        targets: ["path=#,name=MySchema"],
+      });
+
+      expect(results).toHaveLength(1);
+      expect(results[0].typeName).toBe("MySchema");
+    });
+
+    test("should throw error for duplicate custom type names", async () => {
+      const schema = {
+        $defs: {
+          User: {},
+          Admin: {},
+        },
+      };
+      await writeFile(schemaPath, JSON.stringify(schema));
+
+      await expect(
+        generate({
+          schemaPath,
+          outputPath,
+          targets: [
+            "path=#/$defs/User,name=Person",
+            "path=#/$defs/Admin,name=Person",
+          ],
         }),
       ).rejects.toThrow("Duplicate type name");
     });

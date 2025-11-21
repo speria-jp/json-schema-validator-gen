@@ -11,32 +11,31 @@ import {
 } from "json-schema-library";
 import { generateTypeScript } from "./generators/typescript";
 import { generateValidator } from "./generators/validator";
-import type { GenerateOptions, GenerateResult } from "./types";
+import type { GenerateOptions, GenerateResult, Target } from "./types";
 import { getGeneratedHeader } from "./utils/header";
 import {
   generateTypeNameFromPath,
   generateValidatorName,
 } from "./utils/name-generator";
 import { getSchemaAtPath } from "./utils/ref-parser";
+import { parseTargets } from "./utils/target-parser";
 
 export async function generate(
   options: GenerateOptions,
 ): Promise<GenerateResult[]> {
   // Default to root schema if no targets specified
-  const targets =
+  const targetStrings =
     options.targets && options.targets.length > 0 ? options.targets : ["#"];
 
-  // Validation: cannot specify typeName with multiple targets
-  if (targets.length > 1 && options.typeName) {
-    throw new Error("Cannot specify typeName with multiple targets");
-  }
+  // Parse targets
+  const targets = parseTargets(targetStrings);
 
   // Read and parse schema
   const schemaContent = await readFile(options.schemaPath, "utf-8");
   const schema = JSON.parse(schemaContent);
 
   // Generate types for all targets
-  const results = generateForTargets(schema, { ...options, targets });
+  const results = generateForTargets(schema, options, targets);
 
   // Write output to file
   await writeOutput(results, options.outputPath);
@@ -46,9 +45,9 @@ export async function generate(
 
 function generateForTargets(
   schema: JsonSchema,
-  options: GenerateOptions & { targets: string[] },
+  options: GenerateOptions,
+  targets: Target[],
 ): GenerateResult[] {
-  const { targets } = options;
   const types: GenerateResult[] = [];
   const typeNames = new Set<string>();
 
@@ -56,15 +55,15 @@ function generateForTargets(
   for (const target of targets) {
     // Get schema at target path (root "#" or specific path like "#/$defs/User")
     const targetSchema =
-      target === "#" ? schema : getSchemaAtPath(schema, target);
+      target.path === "#" ? schema : getSchemaAtPath(schema, target.path);
 
     // Generate type name
+    // Priority: 1. target.name, 2. derived from path
     const typeName =
-      targets.length === 1 && options.typeName
-        ? options.typeName
-        : target === "#"
-          ? deriveTypeName(options.schemaPath)
-          : generateTypeNameFromPath(target);
+      target.name ||
+      (target.path === "#"
+        ? deriveTypeName(options.schemaPath)
+        : generateTypeNameFromPath(target.path));
     const validatorNameForType = generateValidatorName(typeName);
 
     // Check for duplicate type names
@@ -78,7 +77,7 @@ function generateForTargets(
     // Compile the schema with root schema context for $ref resolution
     // Merge $defs and definitions from root schema so $ref can be resolved
     const schemaWithDefs: JsonSchema =
-      target === "#"
+      target.path === "#"
         ? schema
         : {
             ...targetSchema,
