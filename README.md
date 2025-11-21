@@ -34,16 +34,16 @@ npx @speria-jp/json-schema-validator-gen -s user-schema.json -o validator.ts
 
 # Generate with custom type name
 npx @speria-jp/json-schema-validator-gen -s schema.json -o validator.ts \
-  -T 'path=#,name=User'
+  -t 'path=#,name=User'
 
 # Generate from specific definition
 npx @speria-jp/json-schema-validator-gen -s schema.json -o validator.ts \
-  -T '#/$defs/User'
+  -t '#/$defs/User'
 
 # Generate multiple types with custom names
 npx @speria-jp/json-schema-validator-gen -s schema.json -o types.ts \
-  -T 'path=#/$defs/User,name=AppUser' \
-  -T 'path=#/$defs/Post,name=BlogPost'
+  -t 'path=#/$defs/User,name=AppUser' \
+  -t 'path=#/$defs/Post,name=BlogPost'
 ```
 
 If installed locally, you can also use your package manager directly:
@@ -65,7 +65,7 @@ bun json-schema-validator-gen -s schema.json -o validator.ts
 Options:
 - `-s, --schema` - Path to JSON Schema file (required)
 - `-o, --output` - Output path for generated code (required)
-- `-T, --target` - JSON Schema target path (e.g., `#/$defs/User`). Can be specified multiple times to generate multiple types. Supports custom type names with `path=...,name=...` format. Defaults to `#` (root schema)
+- `-t, --target` - JSON Schema target path (e.g., `#/$defs/User`). Can be specified multiple times to generate multiple types. Supports custom type names with `path=...,name=...` format. Defaults to `#` (root schema)
 - `-h, --help` - Show help message
 
 ### Programmatic API
@@ -194,7 +194,7 @@ You can generate multiple types from a single JSON Schema file using the `--targ
 ```bash
 # Generate User and Post types from $defs (type names derived from path)
 npx json-schema-validator-gen -s schema.json -o types.ts \
-  -T '#/$defs/User' -T '#/$defs/Post'
+  -t '#/$defs/User' -t '#/$defs/Post'
 ```
 
 Given a JSON Schema with `$defs`:

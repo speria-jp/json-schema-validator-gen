@@ -16,7 +16,7 @@ const { values } = parseArgs({
     },
     target: {
       type: "string",
-      short: "T",
+      short: "t",
       multiple: true,
     },
     help: {
@@ -35,7 +35,7 @@ Usage: json-schema-validator-gen -s <schema-path> -o <output-path> [options]
 Options:
   -s, --schema         Path to JSON Schema file (required)
   -o, --output         Output path for generated code (required)
-  -T, --target         JSON Schema target path (e.g., "#/$defs/User")
+  -t, --target         JSON Schema target path (e.g., "#/$defs/User")
                        Can be specified multiple times for multiple types
                        Supports custom type names: "path=#/$defs/User,name=Foo"
                        Defaults to "#" (root schema)
@@ -46,24 +46,24 @@ Examples:
   json-schema-validator-gen -s schema.json -o validator.ts
 
   # Generate from single target (type name derived from target path)
-  json-schema-validator-gen -s schema.json -o validator.ts -T '#/$defs/User'
+  json-schema-validator-gen -s schema.json -o validator.ts -t '#/$defs/User'
 
   # Generate from single target with custom type name
   json-schema-validator-gen -s schema.json -o validator.ts \\
-    -T 'path=#/$defs/User,name=CustomUser'
+    -t 'path=#/$defs/User,name=CustomUser'
 
   # Generate from root with custom type name
   json-schema-validator-gen -s schema.json -o validator.ts \\
-    -T 'path=#,name=MySchema'
+    -t 'path=#,name=MySchema'
 
   # Generate multiple types from targets
   json-schema-validator-gen -s schema.json -o types.ts \\
-    -T '#/$defs/User' -T '#/$defs/Post'
+    -t '#/$defs/User' -t '#/$defs/Post'
 
   # Generate multiple types with custom names
   json-schema-validator-gen -s schema.json -o types.ts \\
-    -T 'path=#/$defs/User,name=AppUser' \\
-    -T 'path=#/$defs/Post,name=BlogPost'
+    -t 'path=#/$defs/User,name=AppUser' \\
+    -t 'path=#/$defs/Post,name=BlogPost'
 `);
   process.exit(values.help ? 0 : 1);
 }
