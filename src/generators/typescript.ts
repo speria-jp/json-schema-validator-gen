@@ -4,12 +4,22 @@ import { getTupleInfo } from "../utils/tuple-helpers";
 
 const { factory } = ts;
 
-export function generateTypeScript(node: SchemaNode, typeName: string): string {
-  const typeNode = generateTypeNode(node);
+export function generateTypeScript(
+  node: SchemaNode,
+  typeName: string,
+  generatedTypes: Map<string, string> = new Map(),
+  isExported: boolean = true,
+): string {
+  const typeNode = generateTypeNode(node, generatedTypes);
+
+  // Control whether to include export keyword
+  const modifiers = isExported
+    ? [factory.createModifier(ts.SyntaxKind.ExportKeyword)]
+    : [];
 
   // Create type alias declaration
   const typeAlias = factory.createTypeAliasDeclaration(
-    [factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+    modifiers,
     typeName,
     undefined,
     typeNode,
@@ -35,7 +45,10 @@ export function generateTypeScript(node: SchemaNode, typeName: string): string {
   return result;
 }
 
-function generateTypeNode(node: SchemaNode): ts.TypeNode {
+function generateTypeNode(
+  node: SchemaNode,
+  generatedTypes: Map<string, string> = new Map(),
+): ts.TypeNode {
   const schema = node.schema;
 
   // Handle missing schema
@@ -58,7 +71,7 @@ function generateTypeNode(node: SchemaNode): ts.TypeNode {
   if (schema.oneOf && node.oneOf) {
     const types: ts.TypeNode[] = [];
     node.oneOf.forEach((subNode) => {
-      types.push(generateTypeNode(subNode));
+      types.push(generateTypeNode(subNode, generatedTypes));
     });
     return types.length > 0
       ? factory.createUnionTypeNode(types)
@@ -68,7 +81,7 @@ function generateTypeNode(node: SchemaNode): ts.TypeNode {
   if (schema.anyOf && node.anyOf) {
     const types: ts.TypeNode[] = [];
     node.anyOf.forEach((subNode) => {
-      types.push(generateTypeNode(subNode));
+      types.push(generateTypeNode(subNode, generatedTypes));
     });
     return types.length > 0
       ? factory.createUnionTypeNode(types)
@@ -78,7 +91,7 @@ function generateTypeNode(node: SchemaNode): ts.TypeNode {
   if (schema.allOf && node.allOf) {
     const types: ts.TypeNode[] = [];
     node.allOf.forEach((subNode) => {
-      types.push(generateTypeNode(subNode));
+      types.push(generateTypeNode(subNode, generatedTypes));
     });
     return types.length > 0
       ? factory.createIntersectionTypeNode(types)
@@ -87,12 +100,26 @@ function generateTypeNode(node: SchemaNode): ts.TypeNode {
 
   // Handle $ref
   if (schema.$ref) {
+    const refPath = schema.$ref;
+
+    // If this reference is in generatedTypes, use the type name
+    const referencedTypeName = generatedTypes.get(refPath);
+    if (referencedTypeName !== undefined) {
+      return factory.createTypeReferenceNode(referencedTypeName, undefined);
+    }
+
+    // If not in generatedTypes, try to resolve and expand inline (fallback for backward compatibility)
+    // This shouldn't happen if dependencies are collected properly
+    console.warn(
+      `Reference ${refPath} not in generatedTypes - falling back to inline expansion`,
+    );
+
     // Try to resolve using the root node's getNode method
     try {
       const rootNode = node.getNodeRoot();
       const { node: refNode } = rootNode.getNode(schema.$ref);
       if (refNode?.schema) {
-        return generateTypeNode(refNode);
+        return generateTypeNode(refNode, generatedTypes);
       }
     } catch (_error) {
       // Root getNode failed, continue to manual resolution
@@ -119,7 +146,7 @@ function generateTypeNode(node: SchemaNode): ts.TypeNode {
         // Create a new node for this definition
         try {
           const definitionNode = rootNode.compileSchema(definition);
-          return generateTypeNode(definitionNode);
+          return generateTypeNode(definitionNode, generatedTypes);
         } catch (_error) {
           // Failed to compile definition, continue to unknown
         }
@@ -155,14 +182,14 @@ function generateTypeNode(node: SchemaNode): ts.TypeNode {
         if (tupleInfo.isDraft2020Tuple && tupleInfo.prefixItems) {
           // Handle Draft 2020-12 tuple: prefixItems defines element types
           const elementTypes = tupleInfo.prefixItems.map((item: SchemaNode) =>
-            generateTypeNode(item),
+            generateTypeNode(item, generatedTypes),
           );
           return factory.createTupleTypeNode(elementTypes);
         } else if (tupleInfo.isDraft07Tuple && tupleInfo.itemSchemas) {
           // Handle Draft 07 tuple: items as array defines element types
           const elementTypes = tupleInfo.itemSchemas.map((itemSchema) => {
             const itemNode = node.compileSchema(itemSchema);
-            return generateTypeNode(itemNode);
+            return generateTypeNode(itemNode, generatedTypes);
           });
           return factory.createTupleTypeNode(elementTypes);
         }
@@ -170,7 +197,7 @@ function generateTypeNode(node: SchemaNode): ts.TypeNode {
 
       // Regular array with single item type
       if (schema.items && node.items) {
-        const itemType = generateTypeNode(node.items);
+        const itemType = generateTypeNode(node.items, generatedTypes);
         return factory.createArrayTypeNode(itemType);
       }
 
@@ -192,7 +219,7 @@ function generateTypeNode(node: SchemaNode): ts.TypeNode {
       if (node.properties) {
         for (const [key, propNode] of Object.entries(node.properties)) {
           const isRequired = schema.required?.includes(key);
-          const propType = generateTypeNode(propNode);
+          const propType = generateTypeNode(propNode, generatedTypes);
 
           const propertySignature = factory.createPropertySignature(
             undefined,
@@ -217,7 +244,7 @@ function generateTypeNode(node: SchemaNode): ts.TypeNode {
       if (Array.isArray(schema.type)) {
         const types = schema.type.map((t) => {
           const tempNode = { ...node, schema: { ...schema, type: t } };
-          return generateTypeNode(tempNode as SchemaNode);
+          return generateTypeNode(tempNode as SchemaNode, generatedTypes);
         });
         return factory.createUnionTypeNode(types);
       }

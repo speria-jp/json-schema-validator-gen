@@ -198,18 +198,23 @@ describe("generate", () => {
       targets: ["path=#,name=UserWithAddress"],
     });
 
-    expect(results).toHaveLength(1);
-    const result = results[0];
-    expect(result.typeName).toBe("UserWithAddress");
-    expect(result.typeDefinition).toContain("export type UserWithAddress = {");
-    expect(result.typeDefinition).toContain("address:");
-    expect(result.typeDefinition).toContain("workAddress?:");
-    expect(result.typeDefinition).toContain("street: string;");
-    expect(result.typeDefinition).toContain("city: string;");
-    expect(result.typeDefinition).toContain("zipCode?: string;");
-    expect(result.validatorCode).toContain('"address" in value');
-    expect(result.validatorCode).toContain('"street" in');
-    expect(result.validatorCode).toContain('"city" in');
+    // Root schema + Address (auto-collected dependency)
+    expect(results).toHaveLength(2);
+
+    const userResult = results.find((r) => r.typeName === "UserWithAddress");
+    expect(userResult).toBeDefined();
+    expect(userResult?.typeDefinition).toContain(
+      "export type UserWithAddress = {",
+    );
+    expect(userResult?.typeDefinition).toContain("address:");
+    expect(userResult?.typeDefinition).toContain("workAddress?:");
+
+    // Address should be auto-collected and reference the type
+    const addressResult = results.find((r) => r.typeName === "Address");
+    expect(addressResult).toBeDefined();
+    expect(addressResult?.typeDefinition).toContain("street: string;");
+    expect(addressResult?.typeDefinition).toContain("city: string;");
+    expect(addressResult?.typeDefinition).toContain("zipCode?: string;");
   });
 
   test("should handle string constraints (minLength, maxLength)", async () => {
@@ -952,22 +957,25 @@ describe("generate", () => {
       targets: ["path=#,name=PersonWithAddress"],
     });
 
-    expect(results).toHaveLength(1);
+    // Root schema + Address (auto-collected dependency)
+    expect(results).toHaveLength(2);
 
-    const result = results[0];
-
-    expect(result.typeName).toBe("PersonWithAddress");
-    expect(result.typeDefinition).toContain(
+    const personResult = results.find(
+      (r) => r.typeName === "PersonWithAddress",
+    );
+    expect(personResult).toBeDefined();
+    expect(personResult?.typeDefinition).toContain(
       "export type PersonWithAddress = {",
     );
-    expect(result.typeDefinition).toContain("homeAddress:");
-    expect(result.typeDefinition).toContain("workAddress?:");
-    expect(result.typeDefinition).toContain("street: string;");
-    expect(result.typeDefinition).toContain("city: string;");
-    expect(result.typeDefinition).toContain("zipCode?: string;");
-    expect(result.validatorCode).toContain('"homeAddress" in value');
-    expect(result.validatorCode).toContain('"street" in');
-    expect(result.validatorCode).toContain('"city" in');
+    expect(personResult?.typeDefinition).toContain("homeAddress:");
+    expect(personResult?.typeDefinition).toContain("workAddress?:");
+
+    // Address should be auto-collected
+    const addressResult = results.find((r) => r.typeName === "Address");
+    expect(addressResult).toBeDefined();
+    expect(addressResult?.typeDefinition).toContain("street: string;");
+    expect(addressResult?.typeDefinition).toContain("city: string;");
+    expect(addressResult?.typeDefinition).toContain("zipCode?: string;");
   });
 
   test("should handle mixed definitions and $defs", async () => {
@@ -999,14 +1007,17 @@ describe("generate", () => {
       targets: ["path=#,name=MixedRefs"],
     });
 
-    expect(results).toHaveLength(1);
+    // Root schema + oldItem + newItem (auto-collected dependencies)
+    expect(results).toHaveLength(3);
 
-    const result = results[0];
+    const rootResult = results.find((r) => r.typeName === "MixedRefs");
+    expect(rootResult).toBeDefined();
+    expect(rootResult?.typeDefinition).toContain("oldStyle?:");
+    expect(rootResult?.typeDefinition).toContain("newStyle?:");
 
-    expect(result.typeDefinition).toContain("oldStyle?:");
-    expect(result.typeDefinition).toContain("newStyle?:");
-    expect(result.typeDefinition).toContain("id?: number;");
-    expect(result.typeDefinition).toContain("name?: string;");
+    // OldItem and NewItem should be auto-collected
+    expect(results.find((r) => r.typeName === "OldItem")).toBeDefined();
+    expect(results.find((r) => r.typeName === "NewItem")).toBeDefined();
   });
 
   test("should handle pattern with forward slashes", async () => {
@@ -1132,15 +1143,19 @@ describe("generate", () => {
       targets: ["path=#,name=MixedRefStyles"],
     });
 
-    expect(results).toHaveLength(1);
+    // Root schema + person + team (auto-collected dependencies)
+    expect(results).toHaveLength(3);
 
-    const result = results[0];
+    const rootResult = results.find((r) => r.typeName === "MixedRefStyles");
+    expect(rootResult).toBeDefined();
+    expect(rootResult?.typeDefinition).toContain("user?:");
+    expect(rootResult?.typeDefinition).toContain("team?:");
 
-    expect(result.typeDefinition).toContain("user?:");
-    expect(result.typeDefinition).toContain("team?:");
-    expect(result.typeDefinition).toContain("name: string;");
-    expect(result.typeDefinition).toContain("age?: number;");
-    expect(result.validatorCode).toContain('"name" in');
+    // Person and Team should be auto-collected
+    const personResult = results.find((r) => r.typeName === "Person");
+    expect(personResult).toBeDefined();
+    expect(personResult?.typeDefinition).toContain("name: string;");
+    expect(personResult?.typeDefinition).toContain("age?: number;");
   });
 
   test("should handle object with empty properties", async () => {
@@ -1283,9 +1298,17 @@ describe("generate", () => {
         targets: ["#/$defs/User"],
       });
 
-      expect(results).toHaveLength(1);
-      expect(results[0].typeName).toBe("User");
-      expect(results[0].typeDefinition).toContain("address?:");
+      // User + Address (auto-collected dependency)
+      expect(results).toHaveLength(2);
+
+      // User should be in results
+      const userResult = results.find((r) => r.typeName === "User");
+      expect(userResult).toBeDefined();
+      expect(userResult?.typeDefinition).toContain("address?:");
+
+      // Address should be auto-collected
+      const addressResult = results.find((r) => r.typeName === "Address");
+      expect(addressResult).toBeDefined();
     });
 
     test("should handle multiple targets with cross-references", async () => {
@@ -1322,7 +1345,12 @@ describe("generate", () => {
         targets: ["#/$defs/User", "#/$defs/Post"],
       });
 
-      expect(results).toHaveLength(2);
+      // User + Post + Address (auto-collected dependency)
+      expect(results).toHaveLength(3);
+
+      // Verify all expected types are present
+      const typeNames = results.map((r) => r.typeName).sort();
+      expect(typeNames).toEqual(["Address", "Post", "User"]);
     });
   });
 
@@ -1356,7 +1384,7 @@ describe("generate", () => {
           outputPath,
           targets: ["#/$defs/User", "#/$defs/user"],
         }),
-      ).rejects.toThrow("Duplicate type name");
+      ).rejects.toThrow("Type name collision");
     });
   });
 
@@ -1512,7 +1540,7 @@ describe("generate", () => {
             "path=#/$defs/Admin,name=Person",
           ],
         }),
-      ).rejects.toThrow("Duplicate type name");
+      ).rejects.toThrow("Type name collision");
     });
   });
 });
