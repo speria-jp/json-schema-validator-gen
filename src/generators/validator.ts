@@ -1,5 +1,6 @@
 import type { JsonSchema, SchemaNode } from "json-schema-library";
 import ts from "typescript";
+import { generateValidatorName } from "../utils/name-generator";
 import { getTupleInfo } from "../utils/tuple-helpers";
 
 const { factory } = ts;
@@ -8,6 +9,8 @@ export function generateValidator(
   node: SchemaNode,
   validatorName: string,
   typeName: string,
+  generatedTypes: Map<string, string> = new Map(),
+  isExported: boolean = true,
 ): string {
   const visited = new WeakSet<SchemaNode>();
   const statements: ts.Statement[] = [];
@@ -20,6 +23,7 @@ export function generateValidator(
     statements,
     visited,
     varCounter,
+    generatedTypes,
   );
 
   // Add final return true
@@ -44,9 +48,14 @@ export function generateValidator(
     factory.createTypeReferenceNode(typeName, undefined),
   );
 
+  // Control whether to include export keyword
+  const modifiers = isExported
+    ? [factory.createModifier(ts.SyntaxKind.ExportKeyword)]
+    : [];
+
   // Create function declaration
   const functionDecl = factory.createFunctionDeclaration(
-    [factory.createModifier(ts.SyntaxKind.ExportKeyword)],
+    modifiers,
     undefined,
     validatorName,
     undefined,
@@ -55,77 +64,87 @@ export function generateValidator(
     functionBody,
   );
 
-  // Create unsafe validator function
-  const unsafeValidatorName = `unsafe${
-    validatorName.charAt(0).toUpperCase() + validatorName.slice(1)
-  }`;
+  // Only generate unsafe validator for exported types
+  const finalStatements: ts.Statement[] = [functionDecl];
 
-  // Create parameter for unsafe validator
-  const unsafeParameter = factory.createParameterDeclaration(
-    undefined,
-    undefined,
-    "value",
-    undefined,
-    factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword),
-  );
+  if (isExported) {
+    // Create unsafe validator function
+    const unsafeValidatorName = `unsafe${
+      validatorName.charAt(0).toUpperCase() + validatorName.slice(1)
+    }`;
 
-  // Create return type for unsafe validator
-  const unsafeReturnType = factory.createTypeReferenceNode(typeName, undefined);
+    // Create parameter for unsafe validator
+    const unsafeParameter = factory.createParameterDeclaration(
+      undefined,
+      undefined,
+      "value",
+      undefined,
+      factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword),
+    );
 
-  // Create unsafe validator body
-  const unsafeStatements: ts.Statement[] = [
-    // if (!validateXXX(value)) throw new Error(...)
-    factory.createIfStatement(
-      factory.createPrefixUnaryExpression(
-        ts.SyntaxKind.ExclamationToken,
-        factory.createCallExpression(
-          factory.createIdentifier(validatorName),
-          undefined,
-          [factory.createIdentifier("value")],
+    // Create return type for unsafe validator
+    const unsafeReturnType = factory.createTypeReferenceNode(
+      typeName,
+      undefined,
+    );
+
+    // Create unsafe validator body
+    const unsafeStatements: ts.Statement[] = [
+      // if (!validateXXX(value)) throw new Error(...)
+      factory.createIfStatement(
+        factory.createPrefixUnaryExpression(
+          ts.SyntaxKind.ExclamationToken,
+          factory.createCallExpression(
+            factory.createIdentifier(validatorName),
+            undefined,
+            [factory.createIdentifier("value")],
+          ),
+        ),
+        factory.createBlock(
+          [
+            factory.createThrowStatement(
+              factory.createNewExpression(
+                factory.createIdentifier("Error"),
+                undefined,
+                [
+                  factory.createStringLiteral(
+                    `Validation failed: value is not ${typeName}`,
+                  ),
+                ],
+              ),
+            ),
+          ],
+          true,
         ),
       ),
-      factory.createBlock(
-        [
-          factory.createThrowStatement(
-            factory.createNewExpression(
-              factory.createIdentifier("Error"),
-              undefined,
-              [
-                factory.createStringLiteral(
-                  `Validation failed: value is not ${typeName}`,
-                ),
-              ],
-            ),
-          ),
-        ],
-        true,
+      // return value as TypeName
+      factory.createReturnStatement(
+        factory.createAsExpression(
+          factory.createIdentifier("value"),
+          factory.createTypeReferenceNode(typeName, undefined),
+        ),
       ),
-    ),
-    // return value as TypeName
-    factory.createReturnStatement(
-      factory.createAsExpression(
-        factory.createIdentifier("value"),
-        factory.createTypeReferenceNode(typeName, undefined),
-      ),
-    ),
-  ];
+    ];
 
-  const unsafeFunctionBody = factory.createBlock(unsafeStatements, true);
+    const unsafeFunctionBody = factory.createBlock(unsafeStatements, true);
 
-  // Create unsafe function declaration
-  const unsafeFunctionDecl = factory.createFunctionDeclaration(
-    [factory.createModifier(ts.SyntaxKind.ExportKeyword)],
-    undefined,
-    unsafeValidatorName,
-    undefined,
-    [unsafeParameter],
-    unsafeReturnType,
-    unsafeFunctionBody,
-  );
+    // Create unsafe function declaration
+    const unsafeFunctionDecl = factory.createFunctionDeclaration(
+      modifiers,
+      undefined,
+      unsafeValidatorName,
+      undefined,
+      [unsafeParameter],
+      unsafeReturnType,
+      unsafeFunctionBody,
+    );
+
+    finalStatements.push(unsafeFunctionDecl);
+  }
 
   // Create source file
   const sourceFile = factory.createSourceFile(
-    [functionDecl, unsafeFunctionDecl],
+    finalStatements,
     factory.createToken(ts.SyntaxKind.EndOfFileToken),
     ts.NodeFlags.None,
   );
@@ -145,6 +164,7 @@ function generateChecks(
   statements: ts.Statement[],
   visited: WeakSet<SchemaNode>,
   varCounter: { count: number },
+  generatedTypes: Map<string, string> = new Map(),
 ): void {
   if (visited.has(node)) return;
   visited.add(node);
@@ -158,12 +178,47 @@ function generateChecks(
 
   // Handle $ref
   if (schema.$ref) {
+    const refPath = schema.$ref;
+
+    // If this reference is in generatedTypes, call the validator function
+    const referencedTypeName = generatedTypes.get(refPath);
+    if (referencedTypeName !== undefined) {
+      const referencedValidatorName = generateValidatorName(referencedTypeName);
+
+      statements.push(
+        createReturnFalseIf(
+          factory.createPrefixUnaryExpression(
+            ts.SyntaxKind.ExclamationToken,
+            factory.createCallExpression(
+              factory.createIdentifier(referencedValidatorName),
+              undefined,
+              [valueExpr],
+            ),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // If not in generatedTypes, try to resolve and expand inline (fallback for backward compatibility)
+    // This shouldn't happen if dependencies are collected properly
+    console.warn(
+      `Reference ${refPath} not in generatedTypes - falling back to inline expansion`,
+    );
+
     // Try to resolve using the root node's getNode method
     try {
       const rootNode = node.getNodeRoot();
       const { node: refNode } = rootNode.getNode(schema.$ref);
       if (refNode?.schema) {
-        generateChecks(refNode, valueExpr, statements, visited, varCounter);
+        generateChecks(
+          refNode,
+          valueExpr,
+          statements,
+          visited,
+          varCounter,
+          generatedTypes,
+        );
         return;
       }
     } catch (_error) {
@@ -197,6 +252,7 @@ function generateChecks(
             statements,
             visited,
             varCounter,
+            generatedTypes,
           );
           return;
         } catch (_error) {
@@ -261,7 +317,14 @@ function generateChecks(
     node.oneOf.forEach((subNode) => {
       const subStatements: ts.Statement[] = [];
       const subVisited = new WeakSet<SchemaNode>();
-      generateChecks(subNode, valueExpr, subStatements, subVisited, varCounter);
+      generateChecks(
+        subNode,
+        valueExpr,
+        subStatements,
+        subVisited,
+        varCounter,
+        generatedTypes,
+      );
       if (subStatements.length > 0) {
         subStatements.push(factory.createReturnStatement(factory.createTrue()));
         const iife = factory.createCallExpression(
@@ -304,7 +367,14 @@ function generateChecks(
     node.anyOf.forEach((subNode) => {
       const subStatements: ts.Statement[] = [];
       const subVisited = new WeakSet<SchemaNode>();
-      generateChecks(subNode, valueExpr, subStatements, subVisited, varCounter);
+      generateChecks(
+        subNode,
+        valueExpr,
+        subStatements,
+        subVisited,
+        varCounter,
+        generatedTypes,
+      );
       if (subStatements.length > 0) {
         subStatements.push(factory.createReturnStatement(factory.createTrue()));
         const iife = factory.createCallExpression(
@@ -440,6 +510,7 @@ function generateChecks(
               statements,
               visited,
               varCounter,
+              generatedTypes,
             );
           });
 
@@ -461,6 +532,7 @@ function generateChecks(
               itemStatements,
               visited,
               varCounter,
+              generatedTypes,
             );
 
             if (itemStatements.length > 0) {
@@ -519,6 +591,7 @@ function generateChecks(
               statements,
               visited,
               varCounter,
+              generatedTypes,
             );
           });
         }
@@ -537,6 +610,7 @@ function generateChecks(
             itemStatements,
             visited,
             varCounter,
+            generatedTypes,
           );
 
           if (itemStatements.length > 0) {
@@ -630,6 +704,7 @@ function generateChecks(
             propStatements,
             visited,
             varCounter,
+            generatedTypes,
           );
 
           if (propStatements.length > 0) {

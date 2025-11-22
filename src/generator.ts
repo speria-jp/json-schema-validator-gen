@@ -12,6 +12,7 @@ import {
 import { generateTypeScript } from "./generators/typescript";
 import { generateValidator } from "./generators/validator";
 import type { GenerateOptions, GenerateResult, Target } from "./types";
+import { collectDependencies } from "./utils/dependency-collector";
 import { getGeneratedHeader } from "./utils/header";
 import {
   generateTypeNameFromPath,
@@ -48,36 +49,67 @@ function generateForTargets(
   options: GenerateOptions,
   targets: Target[],
 ): GenerateResult[] {
-  const types: GenerateResult[] = [];
-  const typeNames = new Set<string>();
+  // 1. Collect all dependencies (order doesn't matter)
+  const targetPaths = targets.map((t) => t.path);
+  const allPaths = collectDependencies(schema, targetPaths);
 
-  // Process each target
+  // 2. Build target name map (path → custom name)
+  const targetNameMap = new Map<string, string>();
   for (const target of targets) {
-    // Get schema at target path (root "#" or specific path like "#/$defs/User")
-    const targetSchema =
-      target.path === "#" ? schema : getSchemaAtPath(schema, target.path);
+    if (target.name) {
+      targetNameMap.set(target.path, target.name);
+    }
+  }
 
-    // Generate type name
-    // Priority: 1. target.name, 2. derived from path
-    const typeName =
-      target.name ||
-      (target.path === "#"
-        ? deriveTypeName(options.schemaPath)
-        : generateTypeNameFromPath(target.path));
-    const validatorNameForType = generateValidatorName(typeName);
+  // 3. Check for type name collisions & build generatedTypes map
+  const generatedTypes = new Map<string, string>(); // refPath → typeName
+  const typeNameToPath = new Map<string, string>(); // typeName → refPath (for collision detection)
 
-    // Check for duplicate type names
-    if (typeNames.has(typeName)) {
+  for (const path of allPaths) {
+    // Determine type name (priority: 1. target.name, 2. derived from path, 3. derived from schema path)
+    let typeName: string;
+    const customName = targetNameMap.get(path);
+    if (customName !== undefined) {
+      typeName = customName;
+    } else if (path === "#") {
+      typeName = deriveTypeName(options.schemaPath);
+    } else {
+      typeName = generateTypeNameFromPath(path);
+    }
+
+    // Check for type name collision
+    const existingPath = typeNameToPath.get(typeName);
+    if (existingPath !== undefined) {
       throw new Error(
-        `Duplicate type name "${typeName}" generated from targets. Please ensure target paths result in unique type names.`,
+        `Type name collision: "${typeName}" is used by both "${existingPath}" and "${path}". ` +
+          `Please specify unique names using --target format "path:name".`,
       );
     }
-    typeNames.add(typeName);
+
+    typeNameToPath.set(typeName, path);
+    generatedTypes.set(path, typeName);
+  }
+
+  // 4. Generate code in any order
+  const results: GenerateResult[] = [];
+
+  for (const path of allPaths) {
+    const typeName = generatedTypes.get(path);
+    if (typeName === undefined) {
+      throw new Error(`Internal error: Type name not found for path "${path}"`);
+    }
+    const validatorNameForType = generateValidatorName(typeName);
+
+    // Only export types/validators specified in --target
+    const isExported = targetPaths.includes(path);
+
+    // Get schema at path
+    const targetSchema = path === "#" ? schema : getSchemaAtPath(schema, path);
 
     // Compile the schema with root schema context for $ref resolution
     // Merge $defs and definitions from root schema so $ref can be resolved
     const schemaWithDefs: JsonSchema =
-      target.path === "#"
+      path === "#"
         ? schema
         : {
             ...targetSchema,
@@ -95,25 +127,33 @@ function generateForTargets(
       drafts: [draft04, draft06, draft07, draft2019, draft2020],
     });
 
-    // Generate TypeScript type
-    const typeDefinition = generateTypeScript(schemaNode, typeName);
+    // Generate TypeScript type (don't expand $ref)
+    const typeDefinition = generateTypeScript(
+      schemaNode,
+      typeName,
+      generatedTypes,
+      isExported,
+    );
 
-    // Generate validator
+    // Generate validator (call validator functions for $ref)
     const validatorCode = generateValidator(
       schemaNode,
       validatorNameForType,
       typeName,
+      generatedTypes,
+      isExported,
     );
 
-    types.push({
+    results.push({
       typeName,
       validatorName: validatorNameForType,
       typeDefinition,
       validatorCode,
+      isExported,
     });
   }
 
-  return types;
+  return results;
 }
 
 async function writeOutput(

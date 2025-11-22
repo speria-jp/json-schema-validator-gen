@@ -18,4 +18,6 @@ export interface GenerateResult {
   validatorName: string;
   typeDefinition: string;
   validatorCode: string;
+  /** Whether this type/validator should be exported (true if specified in --target) */
+  isExported: boolean;
 }

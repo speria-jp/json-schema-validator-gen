@@ -235,18 +235,22 @@ Given a JSON Schema with `$defs`:
 }
 ```
 
-The generator creates both types in a single file:
+The generator automatically collects dependencies and creates all necessary types in a single file. Note that `Address` is also generated because it's referenced by `User`, but it's not exported since it wasn't specified in `--target`:
 
 ```typescript
+// Address type (generated as dependency, not exported)
+type Address = {
+    street: string;
+    city: string;
+    zipCode?: string;
+};
+
+// User type uses type reference instead of inline expansion
 export type User = {
     id: string;
     name: string;
     email: string;
-    address?: {
-        street: string;
-        city: string;
-        zipCode?: string;
-    };
+    address?: Address;
 };
 
 export type Post = {
@@ -255,6 +259,10 @@ export type Post = {
     authorId: string;
 };
 
+// Dependency validator (not exported)
+function validateAddress(value: unknown): value is Address { /* ... */ }
+
+// Exported validators for User and Post
 export function validateUser(value: unknown): value is User { /* ... */ }
 export function unsafeValidateUser(value: unknown): User { /* ... */ }
 

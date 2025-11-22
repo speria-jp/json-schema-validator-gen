@@ -4,16 +4,15 @@
 export type Ref = {
     id: number;
     name: string;
-    address: {
-        street: string;
-        city: string;
-        zipCode?: string;
-    };
-    workAddress?: {
-        street: string;
-        city: string;
-        zipCode?: string;
-    };
+    address: Address;
+    workAddress?: Address;
+};
+
+
+type Address = {
+    street: string;
+    city: string;
+    zipCode?: string;
 };
 
 
@@ -28,35 +27,11 @@ export function validateRef(value: unknown): value is Ref {
         return false;
     if (typeof value.name !== "string")
         return false;
-    if (typeof value.address !== "object" || value.address === null || Array.isArray(value.address))
+    if (!validateAddress(value.address))
         return false;
-    if (!("street" in value.address && "city" in value.address))
-        return false;
-    if (typeof value.address.street !== "string")
-        return false;
-    if (typeof value.address.city !== "string")
-        return false;
-    if ("zipCode" in value.address) {
-        if (typeof value.address.zipCode !== "string")
-            return false;
-        if (!/^\d{5}$/.test(value.address.zipCode))
-            return false;
-    }
     if ("workAddress" in value) {
-        if (typeof value.workAddress !== "object" || value.workAddress === null || Array.isArray(value.workAddress))
+        if (!validateAddress(value.workAddress))
             return false;
-        if (!("street" in value.workAddress && "city" in value.workAddress))
-            return false;
-        if (typeof value.workAddress.street !== "string")
-            return false;
-        if (typeof value.workAddress.city !== "string")
-            return false;
-        if ("zipCode" in value.workAddress) {
-            if (typeof value.workAddress.zipCode !== "string")
-                return false;
-            if (!/^\d{5}$/.test(value.workAddress.zipCode))
-                return false;
-        }
     }
     return true;
 }
@@ -65,4 +40,23 @@ export function unsafeValidateRef(value: unknown): Ref {
         throw new Error("Validation failed: value is not Ref");
     }
     return value as Ref;
+}
+
+
+function validateAddress(value: unknown): value is Address {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+        return false;
+    if (!("street" in value && "city" in value))
+        return false;
+    if (typeof value.street !== "string")
+        return false;
+    if (typeof value.city !== "string")
+        return false;
+    if ("zipCode" in value) {
+        if (typeof value.zipCode !== "string")
+            return false;
+        if (!/^\d{5}$/.test(value.zipCode))
+            return false;
+    }
+    return true;
 }

@@ -12,10 +12,7 @@ export type Complex = {
         warranty?: number;
     };
     status?: "available" | "out-of-stock" | "discontinued";
-    variants?: {
-        sku: string;
-        attributes: Record<string, unknown>;
-    }[];
+    variants?: Variant[];
     shippingMethod?: {
         type: "standard";
         estimatedDays: number;
@@ -41,6 +38,12 @@ export type Complex = {
         name: string;
         values: string | string[] | (string | number)[];
     }[];
+};
+
+
+type Variant = {
+    sku: string;
+    attributes: Record<string, unknown>;
 };
 
 
@@ -119,15 +122,7 @@ export function validateComplex(value: unknown): value is Complex {
         if (!Array.isArray(value.variants))
             return false;
         for (const item2 of value.variants) {
-            if (typeof item2 !== "object" || item2 === null || Array.isArray(item2))
-                return false;
-            if (!("sku" in item2 && "attributes" in item2))
-                return false;
-            if (typeof item2.sku !== "string")
-                return false;
-            if (!/^[A-Z0-9]{6,}$/.test(item2.sku))
-                return false;
-            if (typeof item2.attributes !== "object" || item2.attributes === null || Array.isArray(item2.attributes))
+            if (!validateVariant(item2))
                 return false;
         }
     }
@@ -262,4 +257,19 @@ export function unsafeValidateComplex(value: unknown): Complex {
         throw new Error("Validation failed: value is not Complex");
     }
     return value as Complex;
+}
+
+
+function validateVariant(value: unknown): value is Variant {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+        return false;
+    if (!("sku" in value && "attributes" in value))
+        return false;
+    if (typeof value.sku !== "string")
+        return false;
+    if (!/^[A-Z0-9]{6,}$/.test(value.sku))
+        return false;
+    if (typeof value.attributes !== "object" || value.attributes === null || Array.isArray(value.attributes))
+        return false;
+    return true;
 }
