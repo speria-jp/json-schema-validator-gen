@@ -169,17 +169,22 @@ describe("Runtime validation tests", () => {
     },
   );
 
+  // Helper type for ValidationResult
+  type ValidationResult<T> =
+    | { success: true; data: T }
+    | { success: false; issues: unknown[] };
+
   describe("User validator", () => {
-    let validateUser: (value: unknown) => boolean;
+    let validateUser: (value: unknown) => ValidationResult<unknown>;
     // biome-ignore lint/suspicious/noExplicitAny: User type is imported dynamically
-    let unsafeValidateUser: (value: unknown) => any;
+    let parseUser: (value: unknown) => any;
 
     test("setup", async () => {
       const userValidator = await import(
         join(generatedDir, "user-validator.ts")
       );
       validateUser = userValidator.validateUser;
-      unsafeValidateUser = userValidator.unsafeValidateUser;
+      parseUser = userValidator.parseUser;
     });
 
     test("validates valid user objects", () => {
@@ -219,7 +224,8 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const user of validUsers) {
-        expect(validateUser(user)).toBe(true);
+        const result = validateUser(user);
+        expect(result.success).toBe(true);
       }
     });
 
@@ -279,23 +285,23 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const user of invalidUsers) {
-        expect(validateUser(user)).toBe(false);
+        const result = validateUser(user);
+        expect(result.success).toBe(false);
       }
     });
 
-    test("unsafeValidateUser returns value for valid objects", () => {
+    test("parseUser returns value for valid objects", () => {
       const validUser = {
         id: 1,
         name: "John Doe",
         email: "john@example.com",
       };
 
-      const result = unsafeValidateUser(validUser);
+      const result = parseUser(validUser);
       expect(result).toEqual(validUser);
-      expect(result).toBe(validUser); // Should be the same reference
     });
 
-    test("unsafeValidateUser throws for invalid objects", () => {
+    test("parseUser throws for invalid objects", () => {
       const invalidUsers = [
         { id: 1, name: "John" }, // missing email
         { id: "1", name: "John", email: "john@example.com" }, // invalid id type
@@ -305,24 +311,22 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const user of invalidUsers) {
-        expect(() => unsafeValidateUser(user)).toThrow(
-          "Validation failed: value is not User",
-        );
+        expect(() => parseUser(user)).toThrow("Validation failed for User:");
       }
     });
   });
 
   describe("Complex validator", () => {
-    let validateComplex: (value: unknown) => boolean;
+    let validateComplex: (value: unknown) => ValidationResult<unknown>;
     // biome-ignore lint/suspicious/noExplicitAny: Complex type is imported dynamically
-    let unsafeValidateComplex: (value: unknown) => any;
+    let parseComplex: (value: unknown) => any;
 
     test("setup", async () => {
       const complexValidator = await import(
         join(generatedDir, "complex-validator.ts")
       );
       validateComplex = complexValidator.validateComplex;
-      unsafeValidateComplex = complexValidator.unsafeValidateComplex;
+      parseComplex = complexValidator.parseComplex;
     });
 
     test("validates valid complex objects", () => {
@@ -479,7 +483,8 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const obj of validObjects) {
-        expect(validateComplex(obj)).toBe(true);
+        const result = validateComplex(obj);
+        expect(result.success).toBe(true);
       }
     });
 
@@ -612,11 +617,12 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const obj of invalidObjects) {
-        expect(validateComplex(obj)).toBe(false);
+        const result = validateComplex(obj);
+        expect(result.success).toBe(false);
       }
     });
 
-    test("unsafeValidateComplex returns value for valid objects", () => {
+    test("parseComplex returns value for valid objects", () => {
       const validObject = {
         id: 1,
         name: "Product 1",
@@ -629,12 +635,11 @@ describe("Runtime validation tests", () => {
         ],
       };
 
-      const result = unsafeValidateComplex(validObject);
+      const result = parseComplex(validObject);
       expect(result).toEqual(validObject);
-      expect(result).toBe(validObject); // Should be the same reference
     });
 
-    test("unsafeValidateComplex throws for invalid objects", () => {
+    test("parseComplex throws for invalid objects", () => {
       const invalidObjects = [
         { id: 1, name: "Product" }, // missing price
         { id: 1, name: "Product", price: -1 }, // invalid price
@@ -644,15 +649,13 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const obj of invalidObjects) {
-        expect(() => unsafeValidateComplex(obj)).toThrow(
-          "Validation failed: value is not Complex",
-        );
+        expect(() => parseComplex(obj)).toThrow("Validation failed for Complex:");
       }
     });
   });
 
   describe("Ref validator", () => {
-    let validateRef: (value: unknown) => boolean;
+    let validateRef: (value: unknown) => ValidationResult<unknown>;
 
     test("setup", async () => {
       const refValidator = await import(join(generatedDir, "ref-validator.ts"));
@@ -686,7 +689,8 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const obj of validObjects) {
-        expect(validateRef(obj)).toBe(true);
+        const result = validateRef(obj);
+        expect(result.success).toBe(true);
       }
     });
 
@@ -726,30 +730,31 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const obj of invalidObjects) {
-        expect(validateRef(obj)).toBe(false);
+        const result = validateRef(obj);
+        expect(result.success).toBe(false);
       }
     });
   });
 
   describe("Multiple refs validators", () => {
-    let validateUser: (value: unknown) => boolean;
-    let validatePost: (value: unknown) => boolean;
-    let validateComment: (value: unknown) => boolean;
+    let validateUser: (value: unknown) => ValidationResult<unknown>;
+    let validatePost: (value: unknown) => ValidationResult<unknown>;
+    let validateComment: (value: unknown) => ValidationResult<unknown>;
     // biome-ignore lint/suspicious/noExplicitAny: Types are imported dynamically
-    let unsafeValidateUser: (value: unknown) => any;
+    let parseUser: (value: unknown) => any;
     // biome-ignore lint/suspicious/noExplicitAny: Types are imported dynamically
-    let unsafeValidatePost: (value: unknown) => any;
+    let parsePost: (value: unknown) => any;
     // biome-ignore lint/suspicious/noExplicitAny: Types are imported dynamically
-    let unsafeValidateComment: (value: unknown) => any;
+    let parseComment: (value: unknown) => any;
 
     test("setup", async () => {
       const multiTypes = await import(join(generatedDir, "multi-types.ts"));
       validateUser = multiTypes.validateUser;
       validatePost = multiTypes.validatePost;
       validateComment = multiTypes.validateComment;
-      unsafeValidateUser = multiTypes.unsafeValidateUser;
-      unsafeValidatePost = multiTypes.unsafeValidatePost;
-      unsafeValidateComment = multiTypes.unsafeValidateComment;
+      parseUser = multiTypes.parseUser;
+      parsePost = multiTypes.parsePost;
+      parseComment = multiTypes.parseComment;
     });
 
     test("validates valid User objects", () => {
@@ -767,7 +772,8 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const user of validUsers) {
-        expect(validateUser(user)).toBe(true);
+        const result = validateUser(user);
+        expect(result.success).toBe(true);
       }
     });
 
@@ -787,7 +793,8 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const user of invalidUsers) {
-        expect(validateUser(user)).toBe(false);
+        const result = validateUser(user);
+        expect(result.success).toBe(false);
       }
     });
 
@@ -810,7 +817,8 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const post of validPosts) {
-        expect(validatePost(post)).toBe(true);
+        const result = validatePost(post);
+        expect(result.success).toBe(true);
       }
     });
 
@@ -841,7 +849,8 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const post of invalidPosts) {
-        expect(validatePost(post)).toBe(false);
+        const result = validatePost(post);
+        expect(result.success).toBe(false);
       }
     });
 
@@ -864,7 +873,8 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const comment of validComments) {
-        expect(validateComment(comment)).toBe(true);
+        const result = validateComment(comment);
+        expect(result.success).toBe(true);
       }
     });
 
@@ -893,31 +903,29 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const comment of invalidComments) {
-        expect(validateComment(comment)).toBe(false);
+        const result = validateComment(comment);
+        expect(result.success).toBe(false);
       }
     });
 
-    test("unsafeValidateUser returns value for valid objects", () => {
+    test("parseUser returns value for valid objects", () => {
       const validUser = {
         id: "user-1",
         name: "John Doe",
         email: "john@example.com",
       };
 
-      const result = unsafeValidateUser(validUser);
+      const result = parseUser(validUser);
       expect(result).toEqual(validUser);
-      expect(result).toBe(validUser);
     });
 
-    test("unsafeValidateUser throws for invalid objects", () => {
+    test("parseUser throws for invalid objects", () => {
       const invalidUser = { id: "user-1", name: "John" }; // missing email
 
-      expect(() => unsafeValidateUser(invalidUser)).toThrow(
-        "Validation failed: value is not User",
-      );
+      expect(() => parseUser(invalidUser)).toThrow("Validation failed for User:");
     });
 
-    test("unsafeValidatePost returns value for valid objects", () => {
+    test("parsePost returns value for valid objects", () => {
       const validPost = {
         id: "post-1",
         title: "First Post",
@@ -925,20 +933,17 @@ describe("Runtime validation tests", () => {
         authorId: "user-1",
       };
 
-      const result = unsafeValidatePost(validPost);
+      const result = parsePost(validPost);
       expect(result).toEqual(validPost);
-      expect(result).toBe(validPost);
     });
 
-    test("unsafeValidatePost throws for invalid objects", () => {
+    test("parsePost throws for invalid objects", () => {
       const invalidPost = { id: "post-1", title: "Title", content: "Content" }; // missing authorId
 
-      expect(() => unsafeValidatePost(invalidPost)).toThrow(
-        "Validation failed: value is not Post",
-      );
+      expect(() => parsePost(invalidPost)).toThrow("Validation failed for Post:");
     });
 
-    test("unsafeValidateComment returns value for valid objects", () => {
+    test("parseComment returns value for valid objects", () => {
       const validComment = {
         id: "comment-1",
         postId: "post-1",
@@ -947,12 +952,11 @@ describe("Runtime validation tests", () => {
         createdAt: "2025-01-01T12:00:00Z",
       };
 
-      const result = unsafeValidateComment(validComment);
+      const result = parseComment(validComment);
       expect(result).toEqual(validComment);
-      expect(result).toBe(validComment);
     });
 
-    test("unsafeValidateComment throws for invalid objects", () => {
+    test("parseComment throws for invalid objects", () => {
       const invalidComment = {
         id: "comment-1",
         postId: "post-1",
@@ -960,8 +964,8 @@ describe("Runtime validation tests", () => {
         text: "Comment",
       }; // missing createdAt
 
-      expect(() => unsafeValidateComment(invalidComment)).toThrow(
-        "Validation failed: value is not Comment",
+      expect(() => parseComment(invalidComment)).toThrow(
+        "Validation failed for Comment:",
       );
     });
   });

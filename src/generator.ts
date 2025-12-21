@@ -9,6 +9,7 @@ import {
   draft2020,
   type JsonSchema,
 } from "json-schema-library";
+import { generateRuntimeCode } from "./generators/runtime";
 import { generateTypeScript } from "./generators/typescript";
 import { generateValidator } from "./generators/validator";
 import type { GenerateOptions, GenerateResult, Target } from "./types";
@@ -181,8 +182,11 @@ function deriveTypeName(schemaPath: string): string {
 }
 
 function combineOutput(typeDefinition: string, validatorCode: string): string {
-  // Add header only once at the top
-  return `${getGeneratedHeader()}${typeDefinition}
+  // Add header, runtime code, type definitions, and validator code
+  const runtimeCode = generateRuntimeCode();
+  return `${getGeneratedHeader()}${runtimeCode}
+
+${typeDefinition}
 
 ${validatorCode}`;
 }
