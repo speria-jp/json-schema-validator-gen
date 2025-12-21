@@ -36,26 +36,49 @@ interface ValidationOptions {
 // Validation Helpers (auto-generated)
 // ============================================================================
 
-function _addIssue(
-  issues: ValidationIssue[],
-  code: ValidationIssueCode,
-  path: (string | number)[],
-  expected: string,
-  received: string,
-): void {
-  issues.push({
-    code,
-    path,
-    message: `Expected ${expected}, received ${received}`,
-    expected,
-    received,
-  });
-}
-
 function _getType(value: unknown): string {
   if (value === null) return "null";
   if (Array.isArray(value)) return "array";
   return typeof value;
+}
+
+function _invalidType(issues: ValidationIssue[], path: (string | number)[], expected: string, value: unknown): void {
+  const received = _getType(value);
+  issues.push({ code: "invalid_type", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _missingKey(issues: ValidationIssue[], path: (string | number)[], key: string): void {
+  const expected = `object with required property "${key}"`;
+  const received = `object without property "${key}"`;
+  issues.push({ code: "missing_key", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _tooSmall(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "too_small", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _tooBig(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "too_big", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _invalidString(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "invalid_string", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _invalidValue(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "invalid_value", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _notInteger(issues: ValidationIssue[], path: (string | number)[], value: number): void {
+  issues.push({ code: "not_integer", path, message: `Expected integer, received ${value}`, expected: "integer", received: String(value) });
+}
+
+function _notUnique(issues: ValidationIssue[], path: (string | number)[]): void {
+  issues.push({ code: "not_unique", path, message: "Expected array with unique items, received array with duplicate items", expected: "array with unique items", received: "array with duplicate items" });
+}
+
+function _unrecognizedKey(issues: ValidationIssue[], path: (string | number)[], expected: string, key: string): void {
+  issues.push({ code: "unrecognized_key", path, message: `Expected ${expected}, received ${key}`, expected, received: key });
 }
 
 
@@ -109,45 +132,45 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
     const issues: ValidationIssue[] = [];
     const abortEarly = options?.abortEarly ?? false;
     if (!(typeof value === "object" && value !== null && !Array.isArray(value))) {
-        _addIssue(issues, "invalid_type", [], "object", _getType(value));
+        _invalidType(issues, [], "object", value);
         if (abortEarly)
             return { success: false, issues };
     }
     else {
         if (!("id" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"id\"", "object without property \"id\"");
+            _missingKey(issues, [], "id");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("name" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"name\"", "object without property \"name\"");
+            _missingKey(issues, [], "name");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("price" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"price\"", "object without property \"price\"");
+            _missingKey(issues, [], "price");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("features" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"features\"", "object without property \"features\"");
+            _missingKey(issues, [], "features");
             if (abortEarly)
                 return { success: false, issues };
         }
         if ("id" in value) {
             if (!(typeof value.id === "number")) {
-                _addIssue(issues, "invalid_type", [...[], "id"], "integer", _getType(value.id));
+                _invalidType(issues, [...[], "id"], "integer", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!Number.isInteger(value.id)) {
-                    _addIssue(issues, "not_integer", [...[], "id"], "integer", String(value.id));
+                    _notInteger(issues, [...[], "id"], value.id);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.id < 1) {
-                    _addIssue(issues, "too_small", [...[], "id"], "number >= 1", String(value.id));
+                    _tooSmall(issues, [...[], "id"], "number >= 1", String(value.id));
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -155,18 +178,18 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
         }
         if ("name" in value) {
             if (!(typeof value.name === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "name"], "string", _getType(value.name));
+                _invalidType(issues, [...[], "name"], "string", value.name);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.name.length < 1) {
-                    _addIssue(issues, "too_small", [...[], "name"], "string with length >= 1", `string with length ${value.name.length}`);
+                    _tooSmall(issues, [...[], "name"], "string with length >= 1", `string with length ${value.name.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.name.length > 100) {
-                    _addIssue(issues, "too_big", [...[], "name"], "string with length <= 100", `string with length ${value.name.length}`);
+                    _tooBig(issues, [...[], "name"], "string with length <= 100", `string with length ${value.name.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -174,18 +197,18 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
         }
         if ("price" in value) {
             if (!(typeof value.price === "number")) {
-                _addIssue(issues, "invalid_type", [...[], "price"], "number", _getType(value.price));
+                _invalidType(issues, [...[], "price"], "number", value.price);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.price < 0) {
-                    _addIssue(issues, "too_small", [...[], "price"], "number >= 0", String(value.price));
+                    _tooSmall(issues, [...[], "price"], "number >= 0", String(value.price));
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.price >= 1000000) {
-                    _addIssue(issues, "too_big", [...[], "price"], "number < 1000000", String(value.price));
+                    _tooBig(issues, [...[], "price"], "number < 1000000", String(value.price));
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -193,18 +216,18 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
         }
         if ("discount" in value) {
             if (!(typeof value.discount === "number")) {
-                _addIssue(issues, "invalid_type", [...[], "discount"], "number", _getType(value.discount));
+                _invalidType(issues, [...[], "discount"], "number", value.discount);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.discount < 0) {
-                    _addIssue(issues, "too_small", [...[], "discount"], "number >= 0", String(value.discount));
+                    _tooSmall(issues, [...[], "discount"], "number >= 0", String(value.discount));
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.discount > 100) {
-                    _addIssue(issues, "too_big", [...[], "discount"], "number <= 100", String(value.discount));
+                    _tooBig(issues, [...[], "discount"], "number <= 100", String(value.discount));
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -212,29 +235,29 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
         }
         if ("tags" in value) {
             if (!Array.isArray(value.tags)) {
-                _addIssue(issues, "invalid_type", [...[], "tags"], "array", _getType(value.tags));
+                _invalidType(issues, [...[], "tags"], "array", value.tags);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.tags.length < 1) {
-                    _addIssue(issues, "too_small", [...[], "tags"], "array with at least 1 items", `array with ${value.tags.length} items`);
+                    _tooSmall(issues, [...[], "tags"], "array with at least 1 items", `array with ${value.tags.length} items`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.tags.length > 10) {
-                    _addIssue(issues, "too_big", [...[], "tags"], "array with at most 10 items", `array with ${value.tags.length} items`);
+                    _tooBig(issues, [...[], "tags"], "array with at most 10 items", `array with ${value.tags.length} items`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (new Set(value.tags).size !== value.tags.length) {
-                    _addIssue(issues, "not_unique", [...[], "tags"], "array with unique items", "array with duplicate items");
+                    _notUnique(issues, [...[], "tags"]);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 for (let i1 = 0; i1 < value.tags.length; i1++) {
                     if (!(typeof value.tags[i1] === "string")) {
-                        _addIssue(issues, "invalid_type", [...[...[], "tags"], i1], "string", _getType(value.tags[i1]));
+                        _invalidType(issues, [...[...[], "tags"], i1], "string", value.tags[i1]);
                         if (abortEarly)
                             return { success: false, issues };
                     }
@@ -243,42 +266,42 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
         }
         if ("metadata" in value) {
             if (!(typeof value.metadata === "object" && value.metadata !== null && !Array.isArray(value.metadata))) {
-                _addIssue(issues, "invalid_type", [...[], "metadata"], "object", _getType(value.metadata));
+                _invalidType(issues, [...[], "metadata"], "object", value.metadata);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (Object.keys(value.metadata).length < 1) {
-                    _addIssue(issues, "too_small", [...[], "metadata"], "object with at least 1 properties", `object with ${Object.keys(value.metadata).length} properties`);
+                    _tooSmall(issues, [...[], "metadata"], "object with at least 1 properties", `object with ${Object.keys(value.metadata).length} properties`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (Object.keys(value.metadata).length > 5) {
-                    _addIssue(issues, "too_big", [...[], "metadata"], "object with at most 5 properties", `object with ${Object.keys(value.metadata).length} properties`);
+                    _tooBig(issues, [...[], "metadata"], "object with at most 5 properties", `object with ${Object.keys(value.metadata).length} properties`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if ("manufacturer" in value.metadata) {
                     if (!(typeof value.metadata.manufacturer === "string")) {
-                        _addIssue(issues, "invalid_type", [...[...[], "metadata"], "manufacturer"], "string", _getType(value.metadata.manufacturer));
+                        _invalidType(issues, [...[...[], "metadata"], "manufacturer"], "string", value.metadata.manufacturer);
                         if (abortEarly)
                             return { success: false, issues };
                     }
                 }
                 if ("warranty" in value.metadata) {
                     if (!(typeof value.metadata.warranty === "number")) {
-                        _addIssue(issues, "invalid_type", [...[...[], "metadata"], "warranty"], "integer", _getType(value.metadata.warranty));
+                        _invalidType(issues, [...[...[], "metadata"], "warranty"], "integer", value.metadata.warranty);
                         if (abortEarly)
                             return { success: false, issues };
                     }
                     else {
                         if (!Number.isInteger(value.metadata.warranty)) {
-                            _addIssue(issues, "not_integer", [...[...[], "metadata"], "warranty"], "integer", String(value.metadata.warranty));
+                            _notInteger(issues, [...[...[], "metadata"], "warranty"], value.metadata.warranty);
                             if (abortEarly)
                                 return { success: false, issues };
                         }
                         if (value.metadata.warranty < 0) {
-                            _addIssue(issues, "too_small", [...[...[], "metadata"], "warranty"], "number >= 0", String(value.metadata.warranty));
+                            _tooSmall(issues, [...[...[], "metadata"], "warranty"], "number >= 0", String(value.metadata.warranty));
                             if (abortEarly)
                                 return { success: false, issues };
                         }
@@ -288,14 +311,14 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
         }
         if ("status" in value) {
             if (!(["available", "out-of-stock", "discontinued"] as unknown[]).includes(value.status)) {
-                _addIssue(issues, "invalid_value", [...[], "status"], "\"available\" | \"out-of-stock\" | \"discontinued\"", JSON.stringify(value.status));
+                _invalidValue(issues, [...[], "status"], "\"available\" | \"out-of-stock\" | \"discontinued\"", JSON.stringify(value.status));
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("variants" in value) {
             if (!Array.isArray(value.variants)) {
-                _addIssue(issues, "invalid_type", [...[], "variants"], "array", _getType(value.variants));
+                _invalidType(issues, [...[], "variants"], "array", value.variants);
                 if (abortEarly)
                     return { success: false, issues };
             }
@@ -317,47 +340,47 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
             if ((() => {
                 const _tempIssues: ValidationIssue[] = [];
                 if (!(typeof value.shippingMethod === "object" && value.shippingMethod !== null && !Array.isArray(value.shippingMethod))) {
-                    _addIssue(_tempIssues, "invalid_type", [...[], "shippingMethod"], "object", _getType(value.shippingMethod));
+                    _invalidType(_tempIssues, [...[], "shippingMethod"], "object", value.shippingMethod);
                     if (abortEarly)
                         return { success: false, _tempIssues };
                 }
                 else {
                     if (!("type" in value.shippingMethod)) {
-                        _addIssue(_tempIssues, "missing_key", [...[], "shippingMethod"], "object with required property \"type\"", "object without property \"type\"");
+                        _missingKey(_tempIssues, [...[], "shippingMethod"], "type");
                         if (abortEarly)
                             return { success: false, _tempIssues };
                     }
                     if (!("estimatedDays" in value.shippingMethod)) {
-                        _addIssue(_tempIssues, "missing_key", [...[], "shippingMethod"], "object with required property \"estimatedDays\"", "object without property \"estimatedDays\"");
+                        _missingKey(_tempIssues, [...[], "shippingMethod"], "estimatedDays");
                         if (abortEarly)
                             return { success: false, _tempIssues };
                     }
                     if ("type" in value.shippingMethod) {
                         if (value.shippingMethod.type !== "standard") {
-                            _addIssue(_tempIssues, "invalid_value", [...[...[], "shippingMethod"], "type"], "\"standard\"", JSON.stringify(value.shippingMethod.type));
+                            _invalidValue(_tempIssues, [...[...[], "shippingMethod"], "type"], "\"standard\"", JSON.stringify(value.shippingMethod.type));
                             if (abortEarly)
                                 return { success: false, _tempIssues };
                         }
                     }
                     if ("estimatedDays" in value.shippingMethod) {
                         if (!(typeof value.shippingMethod.estimatedDays === "number")) {
-                            _addIssue(_tempIssues, "invalid_type", [...[...[], "shippingMethod"], "estimatedDays"], "integer", _getType(value.shippingMethod.estimatedDays));
+                            _invalidType(_tempIssues, [...[...[], "shippingMethod"], "estimatedDays"], "integer", value.shippingMethod.estimatedDays);
                             if (abortEarly)
                                 return { success: false, _tempIssues };
                         }
                         else {
                             if (!Number.isInteger(value.shippingMethod.estimatedDays)) {
-                                _addIssue(_tempIssues, "not_integer", [...[...[], "shippingMethod"], "estimatedDays"], "integer", String(value.shippingMethod.estimatedDays));
+                                _notInteger(_tempIssues, [...[...[], "shippingMethod"], "estimatedDays"], value.shippingMethod.estimatedDays);
                                 if (abortEarly)
                                     return { success: false, _tempIssues };
                             }
                             if (value.shippingMethod.estimatedDays < 3) {
-                                _addIssue(_tempIssues, "too_small", [...[...[], "shippingMethod"], "estimatedDays"], "number >= 3", String(value.shippingMethod.estimatedDays));
+                                _tooSmall(_tempIssues, [...[...[], "shippingMethod"], "estimatedDays"], "number >= 3", String(value.shippingMethod.estimatedDays));
                                 if (abortEarly)
                                     return { success: false, _tempIssues };
                             }
                             if (value.shippingMethod.estimatedDays > 7) {
-                                _addIssue(_tempIssues, "too_big", [...[...[], "shippingMethod"], "estimatedDays"], "number <= 7", String(value.shippingMethod.estimatedDays));
+                                _tooBig(_tempIssues, [...[...[], "shippingMethod"], "estimatedDays"], "number <= 7", String(value.shippingMethod.estimatedDays));
                                 if (abortEarly)
                                     return { success: false, _tempIssues };
                             }
@@ -371,37 +394,37 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
             if ((() => {
                 const _tempIssues: ValidationIssue[] = [];
                 if (!(typeof value.shippingMethod === "object" && value.shippingMethod !== null && !Array.isArray(value.shippingMethod))) {
-                    _addIssue(_tempIssues, "invalid_type", [...[], "shippingMethod"], "object", _getType(value.shippingMethod));
+                    _invalidType(_tempIssues, [...[], "shippingMethod"], "object", value.shippingMethod);
                     if (abortEarly)
                         return { success: false, _tempIssues };
                 }
                 else {
                     if (!("type" in value.shippingMethod)) {
-                        _addIssue(_tempIssues, "missing_key", [...[], "shippingMethod"], "object with required property \"type\"", "object without property \"type\"");
+                        _missingKey(_tempIssues, [...[], "shippingMethod"], "type");
                         if (abortEarly)
                             return { success: false, _tempIssues };
                     }
                     if (!("guaranteedDate" in value.shippingMethod)) {
-                        _addIssue(_tempIssues, "missing_key", [...[], "shippingMethod"], "object with required property \"guaranteedDate\"", "object without property \"guaranteedDate\"");
+                        _missingKey(_tempIssues, [...[], "shippingMethod"], "guaranteedDate");
                         if (abortEarly)
                             return { success: false, _tempIssues };
                     }
                     if ("type" in value.shippingMethod) {
                         if (value.shippingMethod.type !== "express") {
-                            _addIssue(_tempIssues, "invalid_value", [...[...[], "shippingMethod"], "type"], "\"express\"", JSON.stringify(value.shippingMethod.type));
+                            _invalidValue(_tempIssues, [...[...[], "shippingMethod"], "type"], "\"express\"", JSON.stringify(value.shippingMethod.type));
                             if (abortEarly)
                                 return { success: false, _tempIssues };
                         }
                     }
                     if ("guaranteedDate" in value.shippingMethod) {
                         if (!(typeof value.shippingMethod.guaranteedDate === "string")) {
-                            _addIssue(_tempIssues, "invalid_type", [...[...[], "shippingMethod"], "guaranteedDate"], "string", _getType(value.shippingMethod.guaranteedDate));
+                            _invalidType(_tempIssues, [...[...[], "shippingMethod"], "guaranteedDate"], "string", value.shippingMethod.guaranteedDate);
                             if (abortEarly)
                                 return { success: false, _tempIssues };
                         }
                         else {
                             if (!/^\d{4}-\d{2}-\d{2}$/.test(value.shippingMethod.guaranteedDate)) {
-                                _addIssue(_tempIssues, "invalid_string", [...[...[], "shippingMethod"], "guaranteedDate"], "string matching pattern /^\\d{4}-\\d{2}-\\d{2}$/", value.shippingMethod.guaranteedDate);
+                                _invalidString(_tempIssues, [...[...[], "shippingMethod"], "guaranteedDate"], "string matching pattern /^\\d{4}-\\d{2}-\\d{2}$/", value.shippingMethod.guaranteedDate);
                                 if (abortEarly)
                                     return { success: false, _tempIssues };
                             }
@@ -413,7 +436,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                 _matchCount5++;
             }
             if (_matchCount5 !== 1) {
-                _addIssue(issues, "invalid_type", [...[], "shippingMethod"], "value matching exactly one schema", `value matching ${_matchCount5} schemas`);
+                issues.push({ code: "invalid_type", path: [...[], "shippingMethod"], message: `Expected ${"value matching exactly one schema"}, received ${`value matching ${_matchCount5} schemas`}`, expected: "value matching exactly one schema", received: `value matching ${_matchCount5} schemas` });
                 if (abortEarly)
                     return { success: false, issues };
             }
@@ -423,42 +446,42 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
             if (!_anyOfMatched8 && (() => {
                 const _tempIssues: ValidationIssue[] = [];
                 if (!(typeof value.paymentOptions === "object" && value.paymentOptions !== null && !Array.isArray(value.paymentOptions))) {
-                    _addIssue(_tempIssues, "invalid_type", [...[], "paymentOptions"], "object", _getType(value.paymentOptions));
+                    _invalidType(_tempIssues, [...[], "paymentOptions"], "object", value.paymentOptions);
                     if (abortEarly)
                         return { success: false, _tempIssues };
                 }
                 else {
                     if (!("creditCard" in value.paymentOptions)) {
-                        _addIssue(_tempIssues, "missing_key", [...[], "paymentOptions"], "object with required property \"creditCard\"", "object without property \"creditCard\"");
+                        _missingKey(_tempIssues, [...[], "paymentOptions"], "creditCard");
                         if (abortEarly)
                             return { success: false, _tempIssues };
                     }
                     if ("creditCard" in value.paymentOptions) {
                         if (!(typeof value.paymentOptions.creditCard === "object" && value.paymentOptions.creditCard !== null && !Array.isArray(value.paymentOptions.creditCard))) {
-                            _addIssue(_tempIssues, "invalid_type", [...[...[], "paymentOptions"], "creditCard"], "object", _getType(value.paymentOptions.creditCard));
+                            _invalidType(_tempIssues, [...[...[], "paymentOptions"], "creditCard"], "object", value.paymentOptions.creditCard);
                             if (abortEarly)
                                 return { success: false, _tempIssues };
                         }
                         else {
                             if (!("lastFourDigits" in value.paymentOptions.creditCard)) {
-                                _addIssue(_tempIssues, "missing_key", [...[...[], "paymentOptions"], "creditCard"], "object with required property \"lastFourDigits\"", "object without property \"lastFourDigits\"");
+                                _missingKey(_tempIssues, [...[...[], "paymentOptions"], "creditCard"], "lastFourDigits");
                                 if (abortEarly)
                                     return { success: false, _tempIssues };
                             }
                             if (!("brand" in value.paymentOptions.creditCard)) {
-                                _addIssue(_tempIssues, "missing_key", [...[...[], "paymentOptions"], "creditCard"], "object with required property \"brand\"", "object without property \"brand\"");
+                                _missingKey(_tempIssues, [...[...[], "paymentOptions"], "creditCard"], "brand");
                                 if (abortEarly)
                                     return { success: false, _tempIssues };
                             }
                             if ("lastFourDigits" in value.paymentOptions.creditCard) {
                                 if (!(typeof value.paymentOptions.creditCard.lastFourDigits === "string")) {
-                                    _addIssue(_tempIssues, "invalid_type", [...[...[...[], "paymentOptions"], "creditCard"], "lastFourDigits"], "string", _getType(value.paymentOptions.creditCard.lastFourDigits));
+                                    _invalidType(_tempIssues, [...[...[...[], "paymentOptions"], "creditCard"], "lastFourDigits"], "string", value.paymentOptions.creditCard.lastFourDigits);
                                     if (abortEarly)
                                         return { success: false, _tempIssues };
                                 }
                                 else {
                                     if (!/^\d{4}$/.test(value.paymentOptions.creditCard.lastFourDigits)) {
-                                        _addIssue(_tempIssues, "invalid_string", [...[...[...[], "paymentOptions"], "creditCard"], "lastFourDigits"], "string matching pattern /^\\d{4}$/", value.paymentOptions.creditCard.lastFourDigits);
+                                        _invalidString(_tempIssues, [...[...[...[], "paymentOptions"], "creditCard"], "lastFourDigits"], "string matching pattern /^\\d{4}$/", value.paymentOptions.creditCard.lastFourDigits);
                                         if (abortEarly)
                                             return { success: false, _tempIssues };
                                     }
@@ -466,7 +489,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                             }
                             if ("brand" in value.paymentOptions.creditCard) {
                                 if (!(["visa", "mastercard", "amex"] as unknown[]).includes(value.paymentOptions.creditCard.brand)) {
-                                    _addIssue(_tempIssues, "invalid_value", [...[...[...[], "paymentOptions"], "creditCard"], "brand"], "\"visa\" | \"mastercard\" | \"amex\"", JSON.stringify(value.paymentOptions.creditCard.brand));
+                                    _invalidValue(_tempIssues, [...[...[...[], "paymentOptions"], "creditCard"], "brand"], "\"visa\" | \"mastercard\" | \"amex\"", JSON.stringify(value.paymentOptions.creditCard.brand));
                                     if (abortEarly)
                                         return { success: false, _tempIssues };
                                 }
@@ -481,31 +504,31 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
             if (!_anyOfMatched8 && (() => {
                 const _tempIssues: ValidationIssue[] = [];
                 if (!(typeof value.paymentOptions === "object" && value.paymentOptions !== null && !Array.isArray(value.paymentOptions))) {
-                    _addIssue(_tempIssues, "invalid_type", [...[], "paymentOptions"], "object", _getType(value.paymentOptions));
+                    _invalidType(_tempIssues, [...[], "paymentOptions"], "object", value.paymentOptions);
                     if (abortEarly)
                         return { success: false, _tempIssues };
                 }
                 else {
                     if (!("paypal" in value.paymentOptions)) {
-                        _addIssue(_tempIssues, "missing_key", [...[], "paymentOptions"], "object with required property \"paypal\"", "object without property \"paypal\"");
+                        _missingKey(_tempIssues, [...[], "paymentOptions"], "paypal");
                         if (abortEarly)
                             return { success: false, _tempIssues };
                     }
                     if ("paypal" in value.paymentOptions) {
                         if (!(typeof value.paymentOptions.paypal === "object" && value.paymentOptions.paypal !== null && !Array.isArray(value.paymentOptions.paypal))) {
-                            _addIssue(_tempIssues, "invalid_type", [...[...[], "paymentOptions"], "paypal"], "object", _getType(value.paymentOptions.paypal));
+                            _invalidType(_tempIssues, [...[...[], "paymentOptions"], "paypal"], "object", value.paymentOptions.paypal);
                             if (abortEarly)
                                 return { success: false, _tempIssues };
                         }
                         else {
                             if (!("email" in value.paymentOptions.paypal)) {
-                                _addIssue(_tempIssues, "missing_key", [...[...[], "paymentOptions"], "paypal"], "object with required property \"email\"", "object without property \"email\"");
+                                _missingKey(_tempIssues, [...[...[], "paymentOptions"], "paypal"], "email");
                                 if (abortEarly)
                                     return { success: false, _tempIssues };
                             }
                             if ("email" in value.paymentOptions.paypal) {
                                 if (!(typeof value.paymentOptions.paypal.email === "string")) {
-                                    _addIssue(_tempIssues, "invalid_type", [...[...[...[], "paymentOptions"], "paypal"], "email"], "string", _getType(value.paymentOptions.paypal.email));
+                                    _invalidType(_tempIssues, [...[...[...[], "paymentOptions"], "paypal"], "email"], "string", value.paymentOptions.paypal.email);
                                     if (abortEarly)
                                         return { success: false, _tempIssues };
                                 }
@@ -520,37 +543,37 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
             if (!_anyOfMatched8 && (() => {
                 const _tempIssues: ValidationIssue[] = [];
                 if (!(typeof value.paymentOptions === "object" && value.paymentOptions !== null && !Array.isArray(value.paymentOptions))) {
-                    _addIssue(_tempIssues, "invalid_type", [...[], "paymentOptions"], "object", _getType(value.paymentOptions));
+                    _invalidType(_tempIssues, [...[], "paymentOptions"], "object", value.paymentOptions);
                     if (abortEarly)
                         return { success: false, _tempIssues };
                 }
                 else {
                     if (!("bankTransfer" in value.paymentOptions)) {
-                        _addIssue(_tempIssues, "missing_key", [...[], "paymentOptions"], "object with required property \"bankTransfer\"", "object without property \"bankTransfer\"");
+                        _missingKey(_tempIssues, [...[], "paymentOptions"], "bankTransfer");
                         if (abortEarly)
                             return { success: false, _tempIssues };
                     }
                     if ("bankTransfer" in value.paymentOptions) {
                         if (!(typeof value.paymentOptions.bankTransfer === "object" && value.paymentOptions.bankTransfer !== null && !Array.isArray(value.paymentOptions.bankTransfer))) {
-                            _addIssue(_tempIssues, "invalid_type", [...[...[], "paymentOptions"], "bankTransfer"], "object", _getType(value.paymentOptions.bankTransfer));
+                            _invalidType(_tempIssues, [...[...[], "paymentOptions"], "bankTransfer"], "object", value.paymentOptions.bankTransfer);
                             if (abortEarly)
                                 return { success: false, _tempIssues };
                         }
                         else {
                             if (!("accountNumber" in value.paymentOptions.bankTransfer)) {
-                                _addIssue(_tempIssues, "missing_key", [...[...[], "paymentOptions"], "bankTransfer"], "object with required property \"accountNumber\"", "object without property \"accountNumber\"");
+                                _missingKey(_tempIssues, [...[...[], "paymentOptions"], "bankTransfer"], "accountNumber");
                                 if (abortEarly)
                                     return { success: false, _tempIssues };
                             }
                             if ("accountNumber" in value.paymentOptions.bankTransfer) {
                                 if (!(typeof value.paymentOptions.bankTransfer.accountNumber === "string")) {
-                                    _addIssue(_tempIssues, "invalid_type", [...[...[...[], "paymentOptions"], "bankTransfer"], "accountNumber"], "string", _getType(value.paymentOptions.bankTransfer.accountNumber));
+                                    _invalidType(_tempIssues, [...[...[...[], "paymentOptions"], "bankTransfer"], "accountNumber"], "string", value.paymentOptions.bankTransfer.accountNumber);
                                     if (abortEarly)
                                         return { success: false, _tempIssues };
                                 }
                                 else {
                                     if (value.paymentOptions.bankTransfer.accountNumber.length < 10) {
-                                        _addIssue(_tempIssues, "too_small", [...[...[...[], "paymentOptions"], "bankTransfer"], "accountNumber"], "string with length >= 10", `string with length ${value.paymentOptions.bankTransfer.accountNumber.length}`);
+                                        _tooSmall(_tempIssues, [...[...[...[], "paymentOptions"], "bankTransfer"], "accountNumber"], "string with length >= 10", `string with length ${value.paymentOptions.bankTransfer.accountNumber.length}`);
                                         if (abortEarly)
                                             return { success: false, _tempIssues };
                                     }
@@ -564,38 +587,38 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                 _anyOfMatched8 = true;
             }
             if (!_anyOfMatched8) {
-                _addIssue(issues, "invalid_type", [...[], "paymentOptions"], "value matching at least one schema", "value matching no schemas");
+                issues.push({ code: "invalid_type", path: [...[], "paymentOptions"], message: `Expected ${"value matching at least one schema"}, received ${"value matching no schemas"}`, expected: "value matching at least one schema", received: "value matching no schemas" });
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("features" in value) {
             if (!Array.isArray(value.features)) {
-                _addIssue(issues, "invalid_type", [...[], "features"], "array", _getType(value.features));
+                _invalidType(issues, [...[], "features"], "array", value.features);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 for (let i9 = 0; i9 < value.features.length; i9++) {
                     if (!(typeof value.features[i9] === "object" && value.features[i9] !== null && !Array.isArray(value.features[i9]))) {
-                        _addIssue(issues, "invalid_type", [...[...[], "features"], i9], "object", _getType(value.features[i9]));
+                        _invalidType(issues, [...[...[], "features"], i9], "object", value.features[i9]);
                         if (abortEarly)
                             return { success: false, issues };
                     }
                     else {
                         if (!("name" in value.features[i9])) {
-                            _addIssue(issues, "missing_key", [...[...[], "features"], i9], "object with required property \"name\"", "object without property \"name\"");
+                            _missingKey(issues, [...[...[], "features"], i9], "name");
                             if (abortEarly)
                                 return { success: false, issues };
                         }
                         if (!("values" in value.features[i9])) {
-                            _addIssue(issues, "missing_key", [...[...[], "features"], i9], "object with required property \"values\"", "object without property \"values\"");
+                            _missingKey(issues, [...[...[], "features"], i9], "values");
                             if (abortEarly)
                                 return { success: false, issues };
                         }
                         if ("name" in value.features[i9]) {
                             if (!(typeof value.features[i9].name === "string")) {
-                                _addIssue(issues, "invalid_type", [...[...[...[], "features"], i9], "name"], "string", _getType(value.features[i9].name));
+                                _invalidType(issues, [...[...[...[], "features"], i9], "name"], "string", value.features[i9].name);
                                 if (abortEarly)
                                     return { success: false, issues };
                             }
@@ -605,7 +628,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                             if (!_anyOfMatched10 && (() => {
                                 const _tempIssues: ValidationIssue[] = [];
                                 if (!(typeof value.features[i9].values === "string")) {
-                                    _addIssue(_tempIssues, "invalid_type", [...[...[...[], "features"], i9], "values"], "string", _getType(value.features[i9].values));
+                                    _invalidType(_tempIssues, [...[...[...[], "features"], i9], "values"], "string", value.features[i9].values);
                                     if (abortEarly)
                                         return { success: false, _tempIssues };
                                 }
@@ -616,14 +639,14 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                             if (!_anyOfMatched10 && (() => {
                                 const _tempIssues: ValidationIssue[] = [];
                                 if (!Array.isArray(value.features[i9].values)) {
-                                    _addIssue(_tempIssues, "invalid_type", [...[...[...[], "features"], i9], "values"], "array", _getType(value.features[i9].values));
+                                    _invalidType(_tempIssues, [...[...[...[], "features"], i9], "values"], "array", value.features[i9].values);
                                     if (abortEarly)
                                         return { success: false, _tempIssues };
                                 }
                                 else {
                                     for (let i11 = 0; i11 < value.features[i9].values.length; i11++) {
                                         if (!(typeof value.features[i9].values[i11] === "string")) {
-                                            _addIssue(_tempIssues, "invalid_type", [...[...[...[...[], "features"], i9], "values"], i11], "string", _getType(value.features[i9].values[i11]));
+                                            _invalidType(_tempIssues, [...[...[...[...[], "features"], i9], "values"], i11], "string", value.features[i9].values[i11]);
                                             if (abortEarly)
                                                 return { success: false, _tempIssues };
                                         }
@@ -636,7 +659,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                             if (!_anyOfMatched10 && (() => {
                                 const _tempIssues: ValidationIssue[] = [];
                                 if (!Array.isArray(value.features[i9].values)) {
-                                    _addIssue(_tempIssues, "invalid_type", [...[...[...[], "features"], i9], "values"], "array", _getType(value.features[i9].values));
+                                    _invalidType(_tempIssues, [...[...[...[], "features"], i9], "values"], "array", value.features[i9].values);
                                     if (abortEarly)
                                         return { success: false, _tempIssues };
                                 }
@@ -646,7 +669,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                         if (!_anyOfMatched13 && (() => {
                                             const _tempIssues: ValidationIssue[] = [];
                                             if (!(typeof value.features[i9].values[i12] === "string")) {
-                                                _addIssue(_tempIssues, "invalid_type", [...[...[...[...[], "features"], i9], "values"], i12], "string", _getType(value.features[i9].values[i12]));
+                                                _invalidType(_tempIssues, [...[...[...[...[], "features"], i9], "values"], i12], "string", value.features[i9].values[i12]);
                                                 if (abortEarly)
                                                     return { success: false, _tempIssues };
                                             }
@@ -657,7 +680,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                         if (!_anyOfMatched13 && (() => {
                                             const _tempIssues: ValidationIssue[] = [];
                                             if (!(typeof value.features[i9].values[i12] === "number")) {
-                                                _addIssue(_tempIssues, "invalid_type", [...[...[...[...[], "features"], i9], "values"], i12], "number", _getType(value.features[i9].values[i12]));
+                                                _invalidType(_tempIssues, [...[...[...[...[], "features"], i9], "values"], i12], "number", value.features[i9].values[i12]);
                                                 if (abortEarly)
                                                     return { success: false, _tempIssues };
                                             }
@@ -666,7 +689,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                             _anyOfMatched13 = true;
                                         }
                                         if (!_anyOfMatched13) {
-                                            _addIssue(_tempIssues, "invalid_type", [...[...[...[...[], "features"], i9], "values"], i12], "value matching at least one schema", "value matching no schemas");
+                                            _tempIssues.push({ code: "invalid_type", path: [...[...[...[...[], "features"], i9], "values"], i12], message: `Expected ${"value matching at least one schema"}, received ${"value matching no schemas"}`, expected: "value matching at least one schema", received: "value matching no schemas" });
                                             if (abortEarly)
                                                 return { success: false, _tempIssues };
                                         }
@@ -677,7 +700,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                 _anyOfMatched10 = true;
                             }
                             if (!_anyOfMatched10) {
-                                _addIssue(issues, "invalid_type", [...[...[...[], "features"], i9], "values"], "value matching at least one schema", "value matching no schemas");
+                                issues.push({ code: "invalid_type", path: [...[...[...[], "features"], i9], "values"], message: `Expected ${"value matching at least one schema"}, received ${"value matching no schemas"}`, expected: "value matching at least one schema", received: "value matching no schemas" });
                                 if (abortEarly)
                                     return { success: false, issues };
                             }
@@ -688,7 +711,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
         }
         for (const key14 in value) {
             if (!["id", "name", "price", "discount", "tags", "metadata", "status", "variants", "shippingMethod", "paymentOptions", "features"].includes(key14)) {
-                _addIssue(issues, "unrecognized_key", [...[], key14], `one of known properties (${["id", "name", "price", "discount", "tags", "metadata", "status", "variants", "shippingMethod", "paymentOptions", "features"].join(", ")})`, key14);
+                _unrecognizedKey(issues, [...[], key14], `one of known properties (${["id", "name", "price", "discount", "tags", "metadata", "status", "variants", "shippingMethod", "paymentOptions", "features"].join(", ")})`, key14);
                 if (abortEarly)
                     return { success: false, issues };
             }
@@ -712,30 +735,30 @@ function validateVariant(value: unknown, options?: ValidationOptions): Validatio
     const issues: ValidationIssue[] = [];
     const abortEarly = options?.abortEarly ?? false;
     if (!(typeof value === "object" && value !== null && !Array.isArray(value))) {
-        _addIssue(issues, "invalid_type", [], "object", _getType(value));
+        _invalidType(issues, [], "object", value);
         if (abortEarly)
             return { success: false, issues };
     }
     else {
         if (!("sku" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"sku\"", "object without property \"sku\"");
+            _missingKey(issues, [], "sku");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("attributes" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"attributes\"", "object without property \"attributes\"");
+            _missingKey(issues, [], "attributes");
             if (abortEarly)
                 return { success: false, issues };
         }
         if ("sku" in value) {
             if (!(typeof value.sku === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "sku"], "string", _getType(value.sku));
+                _invalidType(issues, [...[], "sku"], "string", value.sku);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!/^[A-Z0-9]{6,}$/.test(value.sku)) {
-                    _addIssue(issues, "invalid_string", [...[], "sku"], "string matching pattern /^[A-Z0-9]{6,}$/", value.sku);
+                    _invalidString(issues, [...[], "sku"], "string matching pattern /^[A-Z0-9]{6,}$/", value.sku);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -743,7 +766,7 @@ function validateVariant(value: unknown, options?: ValidationOptions): Validatio
         }
         if ("attributes" in value) {
             if (!(typeof value.attributes === "object" && value.attributes !== null && !Array.isArray(value.attributes))) {
-                _addIssue(issues, "invalid_type", [...[], "attributes"], "object", _getType(value.attributes));
+                _invalidType(issues, [...[], "attributes"], "object", value.attributes);
                 if (abortEarly)
                     return { success: false, issues };
             }

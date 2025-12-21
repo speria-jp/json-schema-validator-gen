@@ -36,26 +36,49 @@ interface ValidationOptions {
 // Validation Helpers (auto-generated)
 // ============================================================================
 
-function _addIssue(
-  issues: ValidationIssue[],
-  code: ValidationIssueCode,
-  path: (string | number)[],
-  expected: string,
-  received: string,
-): void {
-  issues.push({
-    code,
-    path,
-    message: `Expected ${expected}, received ${received}`,
-    expected,
-    received,
-  });
-}
-
 function _getType(value: unknown): string {
   if (value === null) return "null";
   if (Array.isArray(value)) return "array";
   return typeof value;
+}
+
+function _invalidType(issues: ValidationIssue[], path: (string | number)[], expected: string, value: unknown): void {
+  const received = _getType(value);
+  issues.push({ code: "invalid_type", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _missingKey(issues: ValidationIssue[], path: (string | number)[], key: string): void {
+  const expected = `object with required property "${key}"`;
+  const received = `object without property "${key}"`;
+  issues.push({ code: "missing_key", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _tooSmall(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "too_small", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _tooBig(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "too_big", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _invalidString(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "invalid_string", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _invalidValue(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "invalid_value", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _notInteger(issues: ValidationIssue[], path: (string | number)[], value: number): void {
+  issues.push({ code: "not_integer", path, message: `Expected integer, received ${value}`, expected: "integer", received: String(value) });
+}
+
+function _notUnique(issues: ValidationIssue[], path: (string | number)[]): void {
+  issues.push({ code: "not_unique", path, message: "Expected array with unique items, received array with duplicate items", expected: "array with unique items", received: "array with duplicate items" });
+}
+
+function _unrecognizedKey(issues: ValidationIssue[], path: (string | number)[], expected: string, key: string): void {
+  issues.push({ code: "unrecognized_key", path, message: `Expected ${expected}, received ${key}`, expected, received: key });
 }
 
 
@@ -78,35 +101,35 @@ export function validateRef(value: unknown, options?: ValidationOptions): Valida
     const issues: ValidationIssue[] = [];
     const abortEarly = options?.abortEarly ?? false;
     if (!(typeof value === "object" && value !== null && !Array.isArray(value))) {
-        _addIssue(issues, "invalid_type", [], "object", _getType(value));
+        _invalidType(issues, [], "object", value);
         if (abortEarly)
             return { success: false, issues };
     }
     else {
         if (!("id" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"id\"", "object without property \"id\"");
+            _missingKey(issues, [], "id");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("name" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"name\"", "object without property \"name\"");
+            _missingKey(issues, [], "name");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("address" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"address\"", "object without property \"address\"");
+            _missingKey(issues, [], "address");
             if (abortEarly)
                 return { success: false, issues };
         }
         if ("id" in value) {
             if (!(typeof value.id === "number")) {
-                _addIssue(issues, "invalid_type", [...[], "id"], "integer", _getType(value.id));
+                _invalidType(issues, [...[], "id"], "integer", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!Number.isInteger(value.id)) {
-                    _addIssue(issues, "not_integer", [...[], "id"], "integer", String(value.id));
+                    _notInteger(issues, [...[], "id"], value.id);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -114,7 +137,7 @@ export function validateRef(value: unknown, options?: ValidationOptions): Valida
         }
         if ("name" in value) {
             if (!(typeof value.name === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "name"], "string", _getType(value.name));
+                _invalidType(issues, [...[], "name"], "string", value.name);
                 if (abortEarly)
                     return { success: false, issues };
             }
@@ -158,44 +181,44 @@ function validateAddress(value: unknown, options?: ValidationOptions): Validatio
     const issues: ValidationIssue[] = [];
     const abortEarly = options?.abortEarly ?? false;
     if (!(typeof value === "object" && value !== null && !Array.isArray(value))) {
-        _addIssue(issues, "invalid_type", [], "object", _getType(value));
+        _invalidType(issues, [], "object", value);
         if (abortEarly)
             return { success: false, issues };
     }
     else {
         if (!("street" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"street\"", "object without property \"street\"");
+            _missingKey(issues, [], "street");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("city" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"city\"", "object without property \"city\"");
+            _missingKey(issues, [], "city");
             if (abortEarly)
                 return { success: false, issues };
         }
         if ("street" in value) {
             if (!(typeof value.street === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "street"], "string", _getType(value.street));
+                _invalidType(issues, [...[], "street"], "string", value.street);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("city" in value) {
             if (!(typeof value.city === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "city"], "string", _getType(value.city));
+                _invalidType(issues, [...[], "city"], "string", value.city);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("zipCode" in value) {
             if (!(typeof value.zipCode === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "zipCode"], "string", _getType(value.zipCode));
+                _invalidType(issues, [...[], "zipCode"], "string", value.zipCode);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!/^\d{5}$/.test(value.zipCode)) {
-                    _addIssue(issues, "invalid_string", [...[], "zipCode"], "string matching pattern /^\\d{5}$/", value.zipCode);
+                    _invalidString(issues, [...[], "zipCode"], "string matching pattern /^\\d{5}$/", value.zipCode);
                     if (abortEarly)
                         return { success: false, issues };
                 }

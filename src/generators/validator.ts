@@ -480,13 +480,12 @@ function generateChecks(
   if (schema.const !== undefined) {
     const expectedValue = JSON.stringify(schema.const);
     statements.push(
-      createAddIssueIf(
+      createInvalidValueIf(
         factory.createBinaryExpression(
           valueExpr,
           ts.SyntaxKind.ExclamationEqualsEqualsToken,
           createLiteralExpression(schema.const),
         ),
-        "invalid_value",
         pathExpr,
         factory.createStringLiteral(expectedValue),
         factory.createCallExpression(
@@ -516,12 +515,11 @@ function generateChecks(
 
     const expectedValues = schema.enum.map((v: unknown) => JSON.stringify(v)).join(" | ");
     statements.push(
-      createAddIssueIf(
+      createInvalidValueIf(
         factory.createPrefixUnaryExpression(
           ts.SyntaxKind.ExclamationToken,
           includesCall,
         ),
-        "invalid_value",
         pathExpr,
         factory.createStringLiteral(expectedValues),
         factory.createCallExpression(
@@ -561,32 +559,30 @@ function generateChecks(
 
     case "boolean":
       statements.push(
-        createAddIssueIf(
+        createInvalidTypeIf(
           factory.createBinaryExpression(
             factory.createTypeOfExpression(valueExpr),
             ts.SyntaxKind.ExclamationEqualsEqualsToken,
             factory.createStringLiteral("boolean"),
           ),
-          "invalid_type",
           pathExpr,
-          factory.createStringLiteral("boolean"),
-          createGetTypeCall(valueExpr),
+          "boolean",
+          valueExpr,
         ),
       );
       break;
 
     case "null":
       statements.push(
-        createAddIssueIf(
+        createInvalidTypeIf(
           factory.createBinaryExpression(
             valueExpr,
             ts.SyntaxKind.ExclamationEqualsEqualsToken,
             factory.createNull(),
           ),
-          "invalid_type",
           pathExpr,
-          factory.createStringLiteral("null"),
-          createGetTypeCall(valueExpr),
+          "null",
+          valueExpr,
         ),
       );
       break;
@@ -627,13 +623,12 @@ function generateStringChecks(
 
   if (schema.minLength !== undefined) {
     constraintChecks.push(
-      createAddIssueIf(
+      createTooSmallIf(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(valueExpr, "length"),
           ts.SyntaxKind.LessThanToken,
           factory.createNumericLiteral(schema.minLength),
         ),
-        "too_small",
         pathExpr,
         factory.createStringLiteral(`string with length >= ${schema.minLength}`),
         factory.createTemplateExpression(factory.createTemplateHead("string with length "), [
@@ -648,13 +643,12 @@ function generateStringChecks(
 
   if (schema.maxLength !== undefined) {
     constraintChecks.push(
-      createAddIssueIf(
+      createTooBigIf(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(valueExpr, "length"),
           ts.SyntaxKind.GreaterThanToken,
           factory.createNumericLiteral(schema.maxLength),
         ),
-        "too_big",
         pathExpr,
         factory.createStringLiteral(`string with length <= ${schema.maxLength}`),
         factory.createTemplateExpression(factory.createTemplateHead("string with length "), [
@@ -676,7 +670,7 @@ function generateStringChecks(
       const regex = factory.createRegularExpressionLiteral(`/${escapedPattern}/`);
 
       constraintChecks.push(
-        createAddIssueIf(
+        createInvalidStringIf(
           factory.createPrefixUnaryExpression(
             ts.SyntaxKind.ExclamationToken,
             factory.createCallExpression(
@@ -685,7 +679,6 @@ function generateStringChecks(
               [valueExpr],
             ),
           ),
-          "invalid_string",
           pathExpr,
           factory.createStringLiteral(`string matching pattern /${schema.pattern}/`),
           valueExpr,
@@ -708,15 +701,9 @@ function generateStringChecks(
         [
           factory.createExpressionStatement(
             factory.createCallExpression(
-              factory.createIdentifier("_addIssue"),
+              factory.createIdentifier("_invalidType"),
               undefined,
-              [
-                factory.createIdentifier("issues"),
-                factory.createStringLiteral("invalid_type"),
-                pathExpr,
-                factory.createStringLiteral("string"),
-                createGetTypeCall(valueExpr),
-              ],
+              [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral("string"), valueExpr],
             ),
           ),
           createAbortEarlyReturn(),
@@ -748,7 +735,7 @@ function generateNumberChecks(
   // Integer check
   if (type === "integer") {
     constraintChecks.push(
-      createAddIssueIf(
+      createNotIntegerIf(
         factory.createPrefixUnaryExpression(
           ts.SyntaxKind.ExclamationToken,
           factory.createCallExpression(
@@ -760,14 +747,8 @@ function generateNumberChecks(
             [valueExpr],
           ),
         ),
-        "not_integer",
         pathExpr,
-        factory.createStringLiteral("integer"),
-        factory.createCallExpression(
-          factory.createIdentifier("String"),
-          undefined,
-          [valueExpr],
-        ),
+        valueExpr,
       ),
     );
   }
@@ -775,13 +756,12 @@ function generateNumberChecks(
   // Number constraints (no casts needed - TypeScript narrows in else block)
   if (schema.minimum !== undefined) {
     constraintChecks.push(
-      createAddIssueIf(
+      createTooSmallIf(
         factory.createBinaryExpression(
           valueExpr,
           ts.SyntaxKind.LessThanToken,
           createNumericLiteralExpression(schema.minimum),
         ),
-        "too_small",
         pathExpr,
         factory.createStringLiteral(`number >= ${schema.minimum}`),
         factory.createCallExpression(
@@ -795,13 +775,12 @@ function generateNumberChecks(
 
   if (schema.maximum !== undefined) {
     constraintChecks.push(
-      createAddIssueIf(
+      createTooBigIf(
         factory.createBinaryExpression(
           valueExpr,
           ts.SyntaxKind.GreaterThanToken,
           createNumericLiteralExpression(schema.maximum),
         ),
-        "too_big",
         pathExpr,
         factory.createStringLiteral(`number <= ${schema.maximum}`),
         factory.createCallExpression(
@@ -816,13 +795,12 @@ function generateNumberChecks(
   if (schema.exclusiveMinimum !== undefined) {
     if (typeof schema.exclusiveMinimum === "number") {
       constraintChecks.push(
-        createAddIssueIf(
+        createTooSmallIf(
           factory.createBinaryExpression(
             valueExpr,
             ts.SyntaxKind.LessThanEqualsToken,
             createNumericLiteralExpression(schema.exclusiveMinimum),
           ),
-          "too_small",
           pathExpr,
           factory.createStringLiteral(`number > ${schema.exclusiveMinimum}`),
           factory.createCallExpression(
@@ -834,13 +812,12 @@ function generateNumberChecks(
       );
     } else if (schema.exclusiveMinimum === true && schema.minimum !== undefined) {
       constraintChecks.push(
-        createAddIssueIf(
+        createTooSmallIf(
           factory.createBinaryExpression(
             valueExpr,
             ts.SyntaxKind.LessThanEqualsToken,
             createNumericLiteralExpression(schema.minimum),
           ),
-          "too_small",
           pathExpr,
           factory.createStringLiteral(`number > ${schema.minimum}`),
           factory.createCallExpression(
@@ -856,13 +833,12 @@ function generateNumberChecks(
   if (schema.exclusiveMaximum !== undefined) {
     if (typeof schema.exclusiveMaximum === "number") {
       constraintChecks.push(
-        createAddIssueIf(
+        createTooBigIf(
           factory.createBinaryExpression(
             valueExpr,
             ts.SyntaxKind.GreaterThanEqualsToken,
             createNumericLiteralExpression(schema.exclusiveMaximum),
           ),
-          "too_big",
           pathExpr,
           factory.createStringLiteral(`number < ${schema.exclusiveMaximum}`),
           factory.createCallExpression(
@@ -874,13 +850,12 @@ function generateNumberChecks(
       );
     } else if (schema.exclusiveMaximum === true && schema.maximum !== undefined) {
       constraintChecks.push(
-        createAddIssueIf(
+        createTooBigIf(
           factory.createBinaryExpression(
             valueExpr,
             ts.SyntaxKind.GreaterThanEqualsToken,
             createNumericLiteralExpression(schema.maximum),
           ),
-          "too_big",
           pathExpr,
           factory.createStringLiteral(`number < ${schema.maximum}`),
           factory.createCallExpression(
@@ -905,15 +880,9 @@ function generateNumberChecks(
         [
           factory.createExpressionStatement(
             factory.createCallExpression(
-              factory.createIdentifier("_addIssue"),
+              factory.createIdentifier("_invalidType"),
               undefined,
-              [
-                factory.createIdentifier("issues"),
-                factory.createStringLiteral("invalid_type"),
-                pathExpr,
-                factory.createStringLiteral(type),
-                createGetTypeCall(valueExpr),
-              ],
+              [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral(type), valueExpr],
             ),
           ),
           createAbortEarlyReturn(),
@@ -969,15 +938,9 @@ function generateArrayChecks(
         [
           factory.createExpressionStatement(
             factory.createCallExpression(
-              factory.createIdentifier("_addIssue"),
+              factory.createIdentifier("_invalidType"),
               undefined,
-              [
-                factory.createIdentifier("issues"),
-                factory.createStringLiteral("invalid_type"),
-                pathExpr,
-                factory.createStringLiteral("array"),
-                createGetTypeCall(valueExpr),
-              ],
+              [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral("array"), valueExpr],
             ),
           ),
           createAbortEarlyReturn(),
@@ -1003,13 +966,12 @@ function generateTupleChecks(
   if (tupleInfo.isDraft2020Tuple && tupleInfo.prefixItems) {
     if (tupleInfo.isFixedLength) {
       statements.push(
-        createAddIssueIf(
+        createInvalidTypeExprIf(
           factory.createBinaryExpression(
             factory.createPropertyAccessExpression(valueExpr, "length"),
             ts.SyntaxKind.ExclamationEqualsEqualsToken,
             factory.createNumericLiteral(tupleInfo.prefixItems.length),
           ),
-          "invalid_type",
           pathExpr,
           factory.createStringLiteral(`tuple with ${tupleInfo.prefixItems.length} elements`),
           factory.createTemplateExpression(factory.createTemplateHead("array with "), [
@@ -1078,13 +1040,12 @@ function generateTupleChecks(
     }
   } else if (tupleInfo.isDraft07Tuple && tupleInfo.itemSchemas) {
     statements.push(
-      createAddIssueIf(
+      createInvalidTypeExprIf(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(valueExpr, "length"),
           ts.SyntaxKind.ExclamationEqualsEqualsToken,
           factory.createNumericLiteral(tupleInfo.itemSchemas.length),
         ),
-        "invalid_type",
         pathExpr,
         factory.createStringLiteral(`tuple with ${tupleInfo.itemSchemas.length} elements`),
         factory.createTemplateExpression(factory.createTemplateHead("array with "), [
@@ -1165,13 +1126,12 @@ function addArrayConstraintChecks(
 ): void {
   if (schema.minItems !== undefined) {
     statements.push(
-      createAddIssueIf(
+      createTooSmallIf(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(valueExpr, "length"),
           ts.SyntaxKind.LessThanToken,
           factory.createNumericLiteral(schema.minItems),
         ),
-        "too_small",
         pathExpr,
         factory.createStringLiteral(`array with at least ${schema.minItems} items`),
         factory.createTemplateExpression(factory.createTemplateHead("array with "), [
@@ -1186,13 +1146,12 @@ function addArrayConstraintChecks(
 
   if (schema.maxItems !== undefined) {
     statements.push(
-      createAddIssueIf(
+      createTooBigIf(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(valueExpr, "length"),
           ts.SyntaxKind.GreaterThanToken,
           factory.createNumericLiteral(schema.maxItems),
         ),
-        "too_big",
         pathExpr,
         factory.createStringLiteral(`array with at most ${schema.maxItems} items`),
         factory.createTemplateExpression(factory.createTemplateHead("array with "), [
@@ -1207,7 +1166,7 @@ function addArrayConstraintChecks(
 
   if (schema.uniqueItems) {
     statements.push(
-      createAddIssueIf(
+      createNotUniqueIf(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(
             factory.createNewExpression(factory.createIdentifier("Set"), undefined, [valueExpr]),
@@ -1216,10 +1175,7 @@ function addArrayConstraintChecks(
           ts.SyntaxKind.ExclamationEqualsEqualsToken,
           factory.createPropertyAccessExpression(valueExpr, "length"),
         ),
-        "not_unique",
         pathExpr,
-        factory.createStringLiteral("array with unique items"),
-        factory.createStringLiteral("array with duplicate items"),
       ),
     );
   }
@@ -1270,7 +1226,7 @@ function generateObjectChecks(
   if (schema.required && schema.required.length > 0) {
     for (const prop of schema.required) {
       objectChecks.push(
-        createAddIssueIf(
+        createMissingKeyIf(
           factory.createPrefixUnaryExpression(
             ts.SyntaxKind.ExclamationToken,
             factory.createParenthesizedExpression(
@@ -1281,10 +1237,8 @@ function generateObjectChecks(
               ),
             ),
           ),
-          "missing_key",
           pathExpr,
-          factory.createStringLiteral(`object with required property "${prop}"`),
-          factory.createStringLiteral(`object without property "${prop}"`),
+          prop,
         ),
       );
     }
@@ -1342,7 +1296,7 @@ function generateObjectChecks(
         valueExpr,
         factory.createBlock(
           [
-            createAddIssueIf(
+            createUnrecognizedKeyIf(
               factory.createPrefixUnaryExpression(
                 ts.SyntaxKind.ExclamationToken,
                 factory.createCallExpression(
@@ -1351,7 +1305,6 @@ function generateObjectChecks(
                   [keyVar],
                 ),
               ),
-              "unrecognized_key",
               factory.createArrayLiteralExpression([
                 factory.createSpreadElement(pathExpr),
                 keyVar,
@@ -1387,15 +1340,9 @@ function generateObjectChecks(
         [
           factory.createExpressionStatement(
             factory.createCallExpression(
-              factory.createIdentifier("_addIssue"),
+              factory.createIdentifier("_invalidType"),
               undefined,
-              [
-                factory.createIdentifier("issues"),
-                factory.createStringLiteral("invalid_type"),
-                pathExpr,
-                factory.createStringLiteral("object"),
-                createGetTypeCall(valueExpr),
-              ],
+              [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral("object"), valueExpr],
             ),
           ),
           createAbortEarlyReturn(),
@@ -1415,7 +1362,7 @@ function addObjectConstraintChecks(
 ): void {
   if (schema.minProperties !== undefined) {
     statements.push(
-      createAddIssueIf(
+      createTooSmallIf(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(
             factory.createCallExpression(
@@ -1428,7 +1375,6 @@ function addObjectConstraintChecks(
           ts.SyntaxKind.LessThanToken,
           factory.createNumericLiteral(schema.minProperties),
         ),
-        "too_small",
         pathExpr,
         factory.createStringLiteral(`object with at least ${schema.minProperties} properties`),
         factory.createTemplateExpression(factory.createTemplateHead("object with "), [
@@ -1450,7 +1396,7 @@ function addObjectConstraintChecks(
 
   if (schema.maxProperties !== undefined) {
     statements.push(
-      createAddIssueIf(
+      createTooBigIf(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(
             factory.createCallExpression(
@@ -1463,7 +1409,6 @@ function addObjectConstraintChecks(
           ts.SyntaxKind.GreaterThanToken,
           factory.createNumericLiteral(schema.maxProperties),
         ),
-        "too_big",
         pathExpr,
         factory.createStringLiteral(`object with at most ${schema.maxProperties} properties`),
         factory.createTemplateExpression(factory.createTemplateHead("object with "), [
@@ -1594,13 +1539,12 @@ function generateOneOfChecks(
 
   // Check match count
   statements.push(
-    createAddIssueIf(
+    createInvalidTypeExprIf(
       factory.createBinaryExpression(
         factory.createIdentifier(matchCountVarName),
         ts.SyntaxKind.ExclamationEqualsEqualsToken,
         factory.createNumericLiteral(1),
       ),
-      "invalid_type",
       pathExpr,
       factory.createStringLiteral("value matching exactly one schema"),
       factory.createTemplateExpression(factory.createTemplateHead("value matching "), [
@@ -1706,12 +1650,11 @@ function generateAnyOfChecks(
   }
 
   statements.push(
-    createAddIssueIf(
+    createInvalidTypeExprIf(
       factory.createPrefixUnaryExpression(
         ts.SyntaxKind.ExclamationToken,
         factory.createIdentifier(matchedVarName),
       ),
-      "invalid_type",
       pathExpr,
       factory.createStringLiteral("value matching at least one schema"),
       factory.createStringLiteral("value matching no schemas"),
@@ -1752,15 +1695,14 @@ function generateUnionTypeChecks(
     );
 
     statements.push(
-      createAddIssueIf(
+      createInvalidTypeIf(
         factory.createPrefixUnaryExpression(
           ts.SyntaxKind.ExclamationToken,
           factory.createParenthesizedExpression(combined),
         ),
-        "invalid_type",
         pathExpr,
-        factory.createStringLiteral(types.join(" | ")),
-        createGetTypeCall(valueExpr),
+        types.join(" | "),
+        valueExpr,
       ),
     );
   }
@@ -1787,9 +1729,95 @@ function replaceIssuesReference(stmt: ts.Statement, newName: string): ts.Stateme
   return transformed ?? stmt;
 }
 
-function createAddIssueIf(
+// Helper factory functions for each error type
+function createInvalidTypeIf(
   condition: ts.Expression,
-  code: string,
+  pathExpr: ts.Expression,
+  expected: string,
+  valueExpr: ts.Expression,
+): ts.Statement {
+  return factory.createIfStatement(
+    condition,
+    factory.createBlock(
+      [
+        factory.createExpressionStatement(
+          factory.createCallExpression(
+            factory.createIdentifier("_invalidType"),
+            undefined,
+            [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral(expected), valueExpr],
+          ),
+        ),
+        createAbortEarlyReturn(),
+      ],
+      true,
+    ),
+  );
+}
+
+// Variant that takes expected/received as expressions (for special cases like tuple length)
+function createInvalidTypeExprIf(
+  condition: ts.Expression,
+  pathExpr: ts.Expression,
+  expectedExpr: ts.Expression,
+  receivedExpr: ts.Expression,
+): ts.Statement {
+  return factory.createIfStatement(
+    condition,
+    factory.createBlock(
+      [
+        factory.createExpressionStatement(
+          factory.createCallExpression(
+            factory.createPropertyAccessExpression(factory.createIdentifier("issues"), "push"),
+            undefined,
+            [
+              factory.createObjectLiteralExpression([
+                factory.createPropertyAssignment("code", factory.createStringLiteral("invalid_type")),
+                factory.createPropertyAssignment("path", pathExpr),
+                factory.createPropertyAssignment(
+                  "message",
+                  factory.createTemplateExpression(factory.createTemplateHead("Expected "), [
+                    factory.createTemplateSpan(expectedExpr, factory.createTemplateMiddle(", received ")),
+                    factory.createTemplateSpan(receivedExpr, factory.createTemplateTail("")),
+                  ]),
+                ),
+                factory.createPropertyAssignment("expected", expectedExpr),
+                factory.createPropertyAssignment("received", receivedExpr),
+              ]),
+            ],
+          ),
+        ),
+        createAbortEarlyReturn(),
+      ],
+      true,
+    ),
+  );
+}
+
+function createMissingKeyIf(
+  condition: ts.Expression,
+  pathExpr: ts.Expression,
+  key: string,
+): ts.Statement {
+  return factory.createIfStatement(
+    condition,
+    factory.createBlock(
+      [
+        factory.createExpressionStatement(
+          factory.createCallExpression(
+            factory.createIdentifier("_missingKey"),
+            undefined,
+            [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral(key)],
+          ),
+        ),
+        createAbortEarlyReturn(),
+      ],
+      true,
+    ),
+  );
+}
+
+function createTooSmallIf(
+  condition: ts.Expression,
   pathExpr: ts.Expression,
   expected: ts.Expression,
   received: ts.Expression,
@@ -1800,15 +1828,150 @@ function createAddIssueIf(
       [
         factory.createExpressionStatement(
           factory.createCallExpression(
-            factory.createIdentifier("_addIssue"),
+            factory.createIdentifier("_tooSmall"),
             undefined,
-            [
-              factory.createIdentifier("issues"),
-              factory.createStringLiteral(code),
-              pathExpr,
-              expected,
-              received,
-            ],
+            [factory.createIdentifier("issues"), pathExpr, expected, received],
+          ),
+        ),
+        createAbortEarlyReturn(),
+      ],
+      true,
+    ),
+  );
+}
+
+function createTooBigIf(
+  condition: ts.Expression,
+  pathExpr: ts.Expression,
+  expected: ts.Expression,
+  received: ts.Expression,
+): ts.Statement {
+  return factory.createIfStatement(
+    condition,
+    factory.createBlock(
+      [
+        factory.createExpressionStatement(
+          factory.createCallExpression(
+            factory.createIdentifier("_tooBig"),
+            undefined,
+            [factory.createIdentifier("issues"), pathExpr, expected, received],
+          ),
+        ),
+        createAbortEarlyReturn(),
+      ],
+      true,
+    ),
+  );
+}
+
+function createInvalidStringIf(
+  condition: ts.Expression,
+  pathExpr: ts.Expression,
+  expected: ts.Expression,
+  received: ts.Expression,
+): ts.Statement {
+  return factory.createIfStatement(
+    condition,
+    factory.createBlock(
+      [
+        factory.createExpressionStatement(
+          factory.createCallExpression(
+            factory.createIdentifier("_invalidString"),
+            undefined,
+            [factory.createIdentifier("issues"), pathExpr, expected, received],
+          ),
+        ),
+        createAbortEarlyReturn(),
+      ],
+      true,
+    ),
+  );
+}
+
+function createInvalidValueIf(
+  condition: ts.Expression,
+  pathExpr: ts.Expression,
+  expected: ts.Expression,
+  received: ts.Expression,
+): ts.Statement {
+  return factory.createIfStatement(
+    condition,
+    factory.createBlock(
+      [
+        factory.createExpressionStatement(
+          factory.createCallExpression(
+            factory.createIdentifier("_invalidValue"),
+            undefined,
+            [factory.createIdentifier("issues"), pathExpr, expected, received],
+          ),
+        ),
+        createAbortEarlyReturn(),
+      ],
+      true,
+    ),
+  );
+}
+
+function createNotIntegerIf(
+  condition: ts.Expression,
+  pathExpr: ts.Expression,
+  valueExpr: ts.Expression,
+): ts.Statement {
+  return factory.createIfStatement(
+    condition,
+    factory.createBlock(
+      [
+        factory.createExpressionStatement(
+          factory.createCallExpression(
+            factory.createIdentifier("_notInteger"),
+            undefined,
+            [factory.createIdentifier("issues"), pathExpr, valueExpr],
+          ),
+        ),
+        createAbortEarlyReturn(),
+      ],
+      true,
+    ),
+  );
+}
+
+function createNotUniqueIf(
+  condition: ts.Expression,
+  pathExpr: ts.Expression,
+): ts.Statement {
+  return factory.createIfStatement(
+    condition,
+    factory.createBlock(
+      [
+        factory.createExpressionStatement(
+          factory.createCallExpression(
+            factory.createIdentifier("_notUnique"),
+            undefined,
+            [factory.createIdentifier("issues"), pathExpr],
+          ),
+        ),
+        createAbortEarlyReturn(),
+      ],
+      true,
+    ),
+  );
+}
+
+function createUnrecognizedKeyIf(
+  condition: ts.Expression,
+  pathExpr: ts.Expression,
+  expectedExpr: ts.Expression,
+  keyExpr: ts.Expression,
+): ts.Statement {
+  return factory.createIfStatement(
+    condition,
+    factory.createBlock(
+      [
+        factory.createExpressionStatement(
+          factory.createCallExpression(
+            factory.createIdentifier("_unrecognizedKey"),
+            undefined,
+            [factory.createIdentifier("issues"), pathExpr, expectedExpr, keyExpr],
           ),
         ),
         createAbortEarlyReturn(),

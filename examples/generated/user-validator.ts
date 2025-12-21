@@ -36,26 +36,49 @@ interface ValidationOptions {
 // Validation Helpers (auto-generated)
 // ============================================================================
 
-function _addIssue(
-  issues: ValidationIssue[],
-  code: ValidationIssueCode,
-  path: (string | number)[],
-  expected: string,
-  received: string,
-): void {
-  issues.push({
-    code,
-    path,
-    message: `Expected ${expected}, received ${received}`,
-    expected,
-    received,
-  });
-}
-
 function _getType(value: unknown): string {
   if (value === null) return "null";
   if (Array.isArray(value)) return "array";
   return typeof value;
+}
+
+function _invalidType(issues: ValidationIssue[], path: (string | number)[], expected: string, value: unknown): void {
+  const received = _getType(value);
+  issues.push({ code: "invalid_type", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _missingKey(issues: ValidationIssue[], path: (string | number)[], key: string): void {
+  const expected = `object with required property "${key}"`;
+  const received = `object without property "${key}"`;
+  issues.push({ code: "missing_key", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _tooSmall(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "too_small", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _tooBig(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "too_big", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _invalidString(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "invalid_string", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _invalidValue(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "invalid_value", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _notInteger(issues: ValidationIssue[], path: (string | number)[], value: number): void {
+  issues.push({ code: "not_integer", path, message: `Expected integer, received ${value}`, expected: "integer", received: String(value) });
+}
+
+function _notUnique(issues: ValidationIssue[], path: (string | number)[]): void {
+  issues.push({ code: "not_unique", path, message: "Expected array with unique items, received array with duplicate items", expected: "array with unique items", received: "array with duplicate items" });
+}
+
+function _unrecognizedKey(issues: ValidationIssue[], path: (string | number)[], expected: string, key: string): void {
+  issues.push({ code: "unrecognized_key", path, message: `Expected ${expected}, received ${key}`, expected, received: key });
 }
 
 
@@ -77,40 +100,40 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
     const issues: ValidationIssue[] = [];
     const abortEarly = options?.abortEarly ?? false;
     if (!(typeof value === "object" && value !== null && !Array.isArray(value))) {
-        _addIssue(issues, "invalid_type", [], "object", _getType(value));
+        _invalidType(issues, [], "object", value);
         if (abortEarly)
             return { success: false, issues };
     }
     else {
         if (!("id" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"id\"", "object without property \"id\"");
+            _missingKey(issues, [], "id");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("name" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"name\"", "object without property \"name\"");
+            _missingKey(issues, [], "name");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("email" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"email\"", "object without property \"email\"");
+            _missingKey(issues, [], "email");
             if (abortEarly)
                 return { success: false, issues };
         }
         if ("id" in value) {
             if (!(typeof value.id === "number")) {
-                _addIssue(issues, "invalid_type", [...[], "id"], "integer", _getType(value.id));
+                _invalidType(issues, [...[], "id"], "integer", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!Number.isInteger(value.id)) {
-                    _addIssue(issues, "not_integer", [...[], "id"], "integer", String(value.id));
+                    _notInteger(issues, [...[], "id"], value.id);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.id < 1) {
-                    _addIssue(issues, "too_small", [...[], "id"], "number >= 1", String(value.id));
+                    _tooSmall(issues, [...[], "id"], "number >= 1", String(value.id));
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -118,18 +141,18 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("name" in value) {
             if (!(typeof value.name === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "name"], "string", _getType(value.name));
+                _invalidType(issues, [...[], "name"], "string", value.name);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.name.length < 1) {
-                    _addIssue(issues, "too_small", [...[], "name"], "string with length >= 1", `string with length ${value.name.length}`);
+                    _tooSmall(issues, [...[], "name"], "string with length >= 1", `string with length ${value.name.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.name.length > 100) {
-                    _addIssue(issues, "too_big", [...[], "name"], "string with length <= 100", `string with length ${value.name.length}`);
+                    _tooBig(issues, [...[], "name"], "string with length <= 100", `string with length ${value.name.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -137,13 +160,13 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("email" in value) {
             if (!(typeof value.email === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "email"], "string", _getType(value.email));
+                _invalidType(issues, [...[], "email"], "string", value.email);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!/^[\w.-]+@[\w.-]+\.[a-z]{2,}$/.test(value.email)) {
-                    _addIssue(issues, "invalid_string", [...[], "email"], "string matching pattern /^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/", value.email);
+                    _invalidString(issues, [...[], "email"], "string matching pattern /^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/", value.email);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -151,23 +174,23 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("age" in value) {
             if (!(typeof value.age === "number")) {
-                _addIssue(issues, "invalid_type", [...[], "age"], "integer", _getType(value.age));
+                _invalidType(issues, [...[], "age"], "integer", value.age);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!Number.isInteger(value.age)) {
-                    _addIssue(issues, "not_integer", [...[], "age"], "integer", String(value.age));
+                    _notInteger(issues, [...[], "age"], value.age);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.age < 0) {
-                    _addIssue(issues, "too_small", [...[], "age"], "number >= 0", String(value.age));
+                    _tooSmall(issues, [...[], "age"], "number >= 0", String(value.age));
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.age > 150) {
-                    _addIssue(issues, "too_big", [...[], "age"], "number <= 150", String(value.age));
+                    _tooBig(issues, [...[], "age"], "number <= 150", String(value.age));
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -175,14 +198,14 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("tags" in value) {
             if (!Array.isArray(value.tags)) {
-                _addIssue(issues, "invalid_type", [...[], "tags"], "array", _getType(value.tags));
+                _invalidType(issues, [...[], "tags"], "array", value.tags);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 for (let i1 = 0; i1 < value.tags.length; i1++) {
                     if (!(typeof value.tags[i1] === "string")) {
-                        _addIssue(issues, "invalid_type", [...[...[], "tags"], i1], "string", _getType(value.tags[i1]));
+                        _invalidType(issues, [...[...[], "tags"], i1], "string", value.tags[i1]);
                         if (abortEarly)
                             return { success: false, issues };
                     }
@@ -191,53 +214,53 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("role" in value) {
             if (!(["admin", "user", "guest"] as unknown[]).includes(value.role)) {
-                _addIssue(issues, "invalid_value", [...[], "role"], "\"admin\" | \"user\" | \"guest\"", JSON.stringify(value.role));
+                _invalidValue(issues, [...[], "role"], "\"admin\" | \"user\" | \"guest\"", JSON.stringify(value.role));
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("location" in value) {
             if (!Array.isArray(value.location)) {
-                _addIssue(issues, "invalid_type", [...[], "location"], "array", _getType(value.location));
+                _invalidType(issues, [...[], "location"], "array", value.location);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.location.length !== 2) {
-                    _addIssue(issues, "invalid_type", [...[], "location"], "tuple with 2 elements", `array with ${value.location.length} elements`);
+                    issues.push({ code: "invalid_type", path: [...[], "location"], message: `Expected ${"tuple with 2 elements"}, received ${`array with ${value.location.length} elements`}`, expected: "tuple with 2 elements", received: `array with ${value.location.length} elements` });
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (!(typeof value.location[0] === "number")) {
-                    _addIssue(issues, "invalid_type", [...[...[], "location"], 0], "number", _getType(value.location[0]));
+                    _invalidType(issues, [...[...[], "location"], 0], "number", value.location[0]);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 else {
                     if (value.location[0] < -90) {
-                        _addIssue(issues, "too_small", [...[...[], "location"], 0], "number >= -90", String(value.location[0]));
+                        _tooSmall(issues, [...[...[], "location"], 0], "number >= -90", String(value.location[0]));
                         if (abortEarly)
                             return { success: false, issues };
                     }
                     if (value.location[0] > 90) {
-                        _addIssue(issues, "too_big", [...[...[], "location"], 0], "number <= 90", String(value.location[0]));
+                        _tooBig(issues, [...[...[], "location"], 0], "number <= 90", String(value.location[0]));
                         if (abortEarly)
                             return { success: false, issues };
                     }
                 }
                 if (!(typeof value.location[1] === "number")) {
-                    _addIssue(issues, "invalid_type", [...[...[], "location"], 1], "number", _getType(value.location[1]));
+                    _invalidType(issues, [...[...[], "location"], 1], "number", value.location[1]);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 else {
                     if (value.location[1] < -180) {
-                        _addIssue(issues, "too_small", [...[...[], "location"], 1], "number >= -180", String(value.location[1]));
+                        _tooSmall(issues, [...[...[], "location"], 1], "number >= -180", String(value.location[1]));
                         if (abortEarly)
                             return { success: false, issues };
                     }
                     if (value.location[1] > 180) {
-                        _addIssue(issues, "too_big", [...[...[], "location"], 1], "number <= 180", String(value.location[1]));
+                        _tooBig(issues, [...[...[], "location"], 1], "number <= 180", String(value.location[1]));
                         if (abortEarly)
                             return { success: false, issues };
                     }
@@ -246,7 +269,7 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         for (const key2 in value) {
             if (!["id", "name", "email", "age", "tags", "role", "location"].includes(key2)) {
-                _addIssue(issues, "unrecognized_key", [...[], key2], `one of known properties (${["id", "name", "email", "age", "tags", "role", "location"].join(", ")})`, key2);
+                _unrecognizedKey(issues, [...[], key2], `one of known properties (${["id", "name", "email", "age", "tags", "role", "location"].join(", ")})`, key2);
                 if (abortEarly)
                     return { success: false, issues };
             }

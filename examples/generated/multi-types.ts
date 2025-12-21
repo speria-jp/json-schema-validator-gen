@@ -36,26 +36,49 @@ interface ValidationOptions {
 // Validation Helpers (auto-generated)
 // ============================================================================
 
-function _addIssue(
-  issues: ValidationIssue[],
-  code: ValidationIssueCode,
-  path: (string | number)[],
-  expected: string,
-  received: string,
-): void {
-  issues.push({
-    code,
-    path,
-    message: `Expected ${expected}, received ${received}`,
-    expected,
-    received,
-  });
-}
-
 function _getType(value: unknown): string {
   if (value === null) return "null";
   if (Array.isArray(value)) return "array";
   return typeof value;
+}
+
+function _invalidType(issues: ValidationIssue[], path: (string | number)[], expected: string, value: unknown): void {
+  const received = _getType(value);
+  issues.push({ code: "invalid_type", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _missingKey(issues: ValidationIssue[], path: (string | number)[], key: string): void {
+  const expected = `object with required property "${key}"`;
+  const received = `object without property "${key}"`;
+  issues.push({ code: "missing_key", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _tooSmall(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "too_small", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _tooBig(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "too_big", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _invalidString(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "invalid_string", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _invalidValue(issues: ValidationIssue[], path: (string | number)[], expected: string, received: string): void {
+  issues.push({ code: "invalid_value", path, message: `Expected ${expected}, received ${received}`, expected, received });
+}
+
+function _notInteger(issues: ValidationIssue[], path: (string | number)[], value: number): void {
+  issues.push({ code: "not_integer", path, message: `Expected integer, received ${value}`, expected: "integer", received: String(value) });
+}
+
+function _notUnique(issues: ValidationIssue[], path: (string | number)[]): void {
+  issues.push({ code: "not_unique", path, message: "Expected array with unique items, received array with duplicate items", expected: "array with unique items", received: "array with duplicate items" });
+}
+
+function _unrecognizedKey(issues: ValidationIssue[], path: (string | number)[], expected: string, key: string): void {
+  issues.push({ code: "unrecognized_key", path, message: `Expected ${expected}, received ${key}`, expected, received: key });
 }
 
 
@@ -89,42 +112,42 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
     const issues: ValidationIssue[] = [];
     const abortEarly = options?.abortEarly ?? false;
     if (!(typeof value === "object" && value !== null && !Array.isArray(value))) {
-        _addIssue(issues, "invalid_type", [], "object", _getType(value));
+        _invalidType(issues, [], "object", value);
         if (abortEarly)
             return { success: false, issues };
     }
     else {
         if (!("id" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"id\"", "object without property \"id\"");
+            _missingKey(issues, [], "id");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("name" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"name\"", "object without property \"name\"");
+            _missingKey(issues, [], "name");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("email" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"email\"", "object without property \"email\"");
+            _missingKey(issues, [], "email");
             if (abortEarly)
                 return { success: false, issues };
         }
         if ("id" in value) {
             if (!(typeof value.id === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "id"], "string", _getType(value.id));
+                _invalidType(issues, [...[], "id"], "string", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("name" in value) {
             if (!(typeof value.name === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "name"], "string", _getType(value.name));
+                _invalidType(issues, [...[], "name"], "string", value.name);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.name.length < 1) {
-                    _addIssue(issues, "too_small", [...[], "name"], "string with length >= 1", `string with length ${value.name.length}`);
+                    _tooSmall(issues, [...[], "name"], "string with length >= 1", `string with length ${value.name.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -132,13 +155,13 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("email" in value) {
             if (!(typeof value.email === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "email"], "string", _getType(value.email));
+                _invalidType(issues, [...[], "email"], "string", value.email);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!/^[\w.-]+@[\w.-]+\.[a-z]{2,}$/.test(value.email)) {
-                    _addIssue(issues, "invalid_string", [...[], "email"], "string matching pattern /^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/", value.email);
+                    _invalidString(issues, [...[], "email"], "string matching pattern /^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/", value.email);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -146,7 +169,7 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         for (const key1 in value) {
             if (!["id", "name", "email"].includes(key1)) {
-                _addIssue(issues, "unrecognized_key", [...[], key1], `one of known properties (${["id", "name", "email"].join(", ")})`, key1);
+                _unrecognizedKey(issues, [...[], key1], `one of known properties (${["id", "name", "email"].join(", ")})`, key1);
                 if (abortEarly)
                     return { success: false, issues };
             }
@@ -170,52 +193,52 @@ export function validatePost(value: unknown, options?: ValidationOptions): Valid
     const issues: ValidationIssue[] = [];
     const abortEarly = options?.abortEarly ?? false;
     if (!(typeof value === "object" && value !== null && !Array.isArray(value))) {
-        _addIssue(issues, "invalid_type", [], "object", _getType(value));
+        _invalidType(issues, [], "object", value);
         if (abortEarly)
             return { success: false, issues };
     }
     else {
         if (!("id" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"id\"", "object without property \"id\"");
+            _missingKey(issues, [], "id");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("title" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"title\"", "object without property \"title\"");
+            _missingKey(issues, [], "title");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("content" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"content\"", "object without property \"content\"");
+            _missingKey(issues, [], "content");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("authorId" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"authorId\"", "object without property \"authorId\"");
+            _missingKey(issues, [], "authorId");
             if (abortEarly)
                 return { success: false, issues };
         }
         if ("id" in value) {
             if (!(typeof value.id === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "id"], "string", _getType(value.id));
+                _invalidType(issues, [...[], "id"], "string", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("title" in value) {
             if (!(typeof value.title === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "title"], "string", _getType(value.title));
+                _invalidType(issues, [...[], "title"], "string", value.title);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.title.length < 1) {
-                    _addIssue(issues, "too_small", [...[], "title"], "string with length >= 1", `string with length ${value.title.length}`);
+                    _tooSmall(issues, [...[], "title"], "string with length >= 1", `string with length ${value.title.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.title.length > 200) {
-                    _addIssue(issues, "too_big", [...[], "title"], "string with length <= 200", `string with length ${value.title.length}`);
+                    _tooBig(issues, [...[], "title"], "string with length <= 200", `string with length ${value.title.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -223,28 +246,28 @@ export function validatePost(value: unknown, options?: ValidationOptions): Valid
         }
         if ("content" in value) {
             if (!(typeof value.content === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "content"], "string", _getType(value.content));
+                _invalidType(issues, [...[], "content"], "string", value.content);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("authorId" in value) {
             if (!(typeof value.authorId === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "authorId"], "string", _getType(value.authorId));
+                _invalidType(issues, [...[], "authorId"], "string", value.authorId);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("tags" in value) {
             if (!Array.isArray(value.tags)) {
-                _addIssue(issues, "invalid_type", [...[], "tags"], "array", _getType(value.tags));
+                _invalidType(issues, [...[], "tags"], "array", value.tags);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 for (let i1 = 0; i1 < value.tags.length; i1++) {
                     if (!(typeof value.tags[i1] === "string")) {
-                        _addIssue(issues, "invalid_type", [...[...[], "tags"], i1], "string", _getType(value.tags[i1]));
+                        _invalidType(issues, [...[...[], "tags"], i1], "string", value.tags[i1]);
                         if (abortEarly)
                             return { success: false, issues };
                     }
@@ -253,14 +276,14 @@ export function validatePost(value: unknown, options?: ValidationOptions): Valid
         }
         if ("published" in value) {
             if (typeof value.published !== "boolean") {
-                _addIssue(issues, "invalid_type", [...[], "published"], "boolean", _getType(value.published));
+                _invalidType(issues, [...[], "published"], "boolean", value.published);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         for (const key2 in value) {
             if (!["id", "title", "content", "authorId", "tags", "published"].includes(key2)) {
-                _addIssue(issues, "unrecognized_key", [...[], key2], `one of known properties (${["id", "title", "content", "authorId", "tags", "published"].join(", ")})`, key2);
+                _unrecognizedKey(issues, [...[], key2], `one of known properties (${["id", "title", "content", "authorId", "tags", "published"].join(", ")})`, key2);
                 if (abortEarly)
                     return { success: false, issues };
             }
@@ -284,71 +307,71 @@ export function validateComment(value: unknown, options?: ValidationOptions): Va
     const issues: ValidationIssue[] = [];
     const abortEarly = options?.abortEarly ?? false;
     if (!(typeof value === "object" && value !== null && !Array.isArray(value))) {
-        _addIssue(issues, "invalid_type", [], "object", _getType(value));
+        _invalidType(issues, [], "object", value);
         if (abortEarly)
             return { success: false, issues };
     }
     else {
         if (!("id" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"id\"", "object without property \"id\"");
+            _missingKey(issues, [], "id");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("postId" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"postId\"", "object without property \"postId\"");
+            _missingKey(issues, [], "postId");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("authorId" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"authorId\"", "object without property \"authorId\"");
+            _missingKey(issues, [], "authorId");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("text" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"text\"", "object without property \"text\"");
+            _missingKey(issues, [], "text");
             if (abortEarly)
                 return { success: false, issues };
         }
         if (!("createdAt" in value)) {
-            _addIssue(issues, "missing_key", [], "object with required property \"createdAt\"", "object without property \"createdAt\"");
+            _missingKey(issues, [], "createdAt");
             if (abortEarly)
                 return { success: false, issues };
         }
         if ("id" in value) {
             if (!(typeof value.id === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "id"], "string", _getType(value.id));
+                _invalidType(issues, [...[], "id"], "string", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("postId" in value) {
             if (!(typeof value.postId === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "postId"], "string", _getType(value.postId));
+                _invalidType(issues, [...[], "postId"], "string", value.postId);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("authorId" in value) {
             if (!(typeof value.authorId === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "authorId"], "string", _getType(value.authorId));
+                _invalidType(issues, [...[], "authorId"], "string", value.authorId);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("text" in value) {
             if (!(typeof value.text === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "text"], "string", _getType(value.text));
+                _invalidType(issues, [...[], "text"], "string", value.text);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.text.length < 1) {
-                    _addIssue(issues, "too_small", [...[], "text"], "string with length >= 1", `string with length ${value.text.length}`);
+                    _tooSmall(issues, [...[], "text"], "string with length >= 1", `string with length ${value.text.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.text.length > 1000) {
-                    _addIssue(issues, "too_big", [...[], "text"], "string with length <= 1000", `string with length ${value.text.length}`);
+                    _tooBig(issues, [...[], "text"], "string with length <= 1000", `string with length ${value.text.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -356,14 +379,14 @@ export function validateComment(value: unknown, options?: ValidationOptions): Va
         }
         if ("createdAt" in value) {
             if (!(typeof value.createdAt === "string")) {
-                _addIssue(issues, "invalid_type", [...[], "createdAt"], "string", _getType(value.createdAt));
+                _invalidType(issues, [...[], "createdAt"], "string", value.createdAt);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         for (const key1 in value) {
             if (!["id", "postId", "authorId", "text", "createdAt"].includes(key1)) {
-                _addIssue(issues, "unrecognized_key", [...[], key1], `one of known properties (${["id", "postId", "authorId", "text", "createdAt"].join(", ")})`, key1);
+                _unrecognizedKey(issues, [...[], key1], `one of known properties (${["id", "postId", "authorId", "text", "createdAt"].join(", ")})`, key1);
                 if (abortEarly)
                     return { success: false, issues };
             }
