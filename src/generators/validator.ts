@@ -329,7 +329,7 @@ function generateChecks(
                 factory.createCallExpression(
                   factory.createIdentifier(referencedValidatorName),
                   undefined,
-                  [valueExpr],
+                  [valueExpr, factory.createIdentifier("options")],
                 ),
               ),
             ],

@@ -324,7 +324,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
             }
             else {
                 for (let i2 = 0; i2 < value.variants.length; i2++) {
-                    const _refResult3 = validateVariant(value.variants[i2]);
+                    const _refResult3 = validateVariant(value.variants[i2], options);
                     if (!_refResult3.success) {
                         for (const _issue4 of _refResult3.issues) {
                             issues.push({ ..._issue4, path: [...["variants", i2], ..._issue4.path] });

@@ -143,7 +143,7 @@ export function validateRef(value: unknown, options?: ValidationOptions): Valida
             }
         }
         if ("address" in value) {
-            const _refResult1 = validateAddress(value.address);
+            const _refResult1 = validateAddress(value.address, options);
             if (!_refResult1.success) {
                 for (const _issue2 of _refResult1.issues) {
                     issues.push({ ..._issue2, path: [...["address"], ..._issue2.path] });
@@ -153,7 +153,7 @@ export function validateRef(value: unknown, options?: ValidationOptions): Valida
             }
         }
         if ("workAddress" in value) {
-            const _refResult3 = validateAddress(value.workAddress);
+            const _refResult3 = validateAddress(value.workAddress, options);
             if (!_refResult3.success) {
                 for (const _issue4 of _refResult3.issues) {
                     issues.push({ ..._issue4, path: [...["workAddress"], ..._issue4.path] });

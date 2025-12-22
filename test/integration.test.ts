@@ -987,9 +987,18 @@ describe("Runtime validation tests", () => {
   });
 
   describe("Error detail verification", () => {
-    let validateUser: (value: unknown) => ValidationResult<unknown>;
-    let validateComplex: (value: unknown) => ValidationResult<unknown>;
-    let validateRef: (value: unknown) => ValidationResult<unknown>;
+    let validateUser: (
+      value: unknown,
+      options?: { abortEarly?: boolean },
+    ) => ValidationResult<unknown>;
+    let validateComplex: (
+      value: unknown,
+      options?: { abortEarly?: boolean },
+    ) => ValidationResult<unknown>;
+    let validateRef: (
+      value: unknown,
+      options?: { abortEarly?: boolean },
+    ) => ValidationResult<unknown>;
 
     test("setup", async () => {
       const userValidator = await import(
@@ -1327,6 +1336,35 @@ describe("Runtime validation tests", () => {
         expect(codes).toContain("too_small");
         expect(codes).toContain("invalid_string");
         expect(codes).toContain("unrecognized_key");
+      }
+    });
+
+    test("abortEarly propagates to nested $ref validators", () => {
+      // Test data with multiple errors in nested $ref (address)
+      const invalidData = {
+        id: 1,
+        name: "John",
+        address: {
+          street: 123, // invalid_type (should be string)
+          city: 456, // invalid_type (should be string)
+          zipCode: "abc", // invalid_string (pattern mismatch)
+        },
+      };
+
+      // Without abortEarly - should collect all errors
+      const resultAll = validateRef(invalidData);
+      expect(resultAll.success).toBe(false);
+      if (!resultAll.success) {
+        // Should have multiple issues from nested address
+        expect(resultAll.issues.length).toBeGreaterThan(1);
+      }
+
+      // With abortEarly - should stop at first error
+      const resultEarly = validateRef(invalidData, { abortEarly: true });
+      expect(resultEarly.success).toBe(false);
+      if (!resultEarly.success) {
+        // Should have only 1 issue due to abortEarly
+        expect(resultEarly.issues.length).toBe(1);
       }
     });
   });
