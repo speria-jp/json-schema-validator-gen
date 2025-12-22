@@ -168,10 +168,10 @@ export function validateRef(value: unknown, options?: ValidationOptions): Valida
     }
     return { success: true, data: value as Ref };
 }
-export function parseRef(value: unknown): Ref {
-    const result = validateRef(value);
+export function unsafeValidateRef(value: unknown): Ref {
+    const result = validateRef(value, { abortEarly: true });
     if (!result.success) {
-        throw new Error(`Validation failed for Ref: ${result.issues.map(i => i.message)}`);
+        throw new Error("Validation failed: value is not Ref");
     }
     return result.data;
 }

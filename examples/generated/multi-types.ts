@@ -180,10 +180,10 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
     }
     return { success: true, data: value as User };
 }
-export function parseUser(value: unknown): User {
-    const result = validateUser(value);
+export function unsafeValidateUser(value: unknown): User {
+    const result = validateUser(value, { abortEarly: true });
     if (!result.success) {
-        throw new Error(`Validation failed for User: ${result.issues.map(i => i.message)}`);
+        throw new Error("Validation failed: value is not User");
     }
     return result.data;
 }
@@ -294,10 +294,10 @@ export function validatePost(value: unknown, options?: ValidationOptions): Valid
     }
     return { success: true, data: value as Post };
 }
-export function parsePost(value: unknown): Post {
-    const result = validatePost(value);
+export function unsafeValidatePost(value: unknown): Post {
+    const result = validatePost(value, { abortEarly: true });
     if (!result.success) {
-        throw new Error(`Validation failed for Post: ${result.issues.map(i => i.message)}`);
+        throw new Error("Validation failed: value is not Post");
     }
     return result.data;
 }
@@ -397,10 +397,10 @@ export function validateComment(value: unknown, options?: ValidationOptions): Va
     }
     return { success: true, data: value as Comment };
 }
-export function parseComment(value: unknown): Comment {
-    const result = validateComment(value);
+export function unsafeValidateComment(value: unknown): Comment {
+    const result = validateComment(value, { abortEarly: true });
     if (!result.success) {
-        throw new Error(`Validation failed for Comment: ${result.issues.map(i => i.message)}`);
+        throw new Error("Validation failed: value is not Comment");
     }
     return result.data;
 }

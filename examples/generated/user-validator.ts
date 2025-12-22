@@ -280,10 +280,10 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
     }
     return { success: true, data: value as User };
 }
-export function parseUser(value: unknown): User {
-    const result = validateUser(value);
+export function unsafeValidateUser(value: unknown): User {
+    const result = validateUser(value, { abortEarly: true });
     if (!result.success) {
-        throw new Error(`Validation failed for User: ${result.issues.map(i => i.message)}`);
+        throw new Error("Validation failed: value is not User");
     }
     return result.data;
 }

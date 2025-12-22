@@ -90,7 +90,10 @@ export function generateValidator(
         [
           factory.createReturnStatement(
             factory.createObjectLiteralExpression([
-              factory.createPropertyAssignment("success", factory.createFalse()),
+              factory.createPropertyAssignment(
+                "success",
+                factory.createFalse(),
+              ),
               factory.createShorthandPropertyAssignment("issues"),
             ]),
           ),
@@ -162,11 +165,11 @@ export function generateValidator(
   const finalStatements: ts.Statement[] = [functionDecl];
 
   if (isExported) {
-    // Create parse function (throws on error)
-    const parseFunctionName = `parse${typeName}`;
+    // Create unsafeValidate function (throws on error)
+    const unsafeFunctionName = `unsafeValidate${typeName}`;
 
-    // Create parameter for parse function
-    const parseParameter = factory.createParameterDeclaration(
+    // Create parameter for unsafeValidate function
+    const unsafeParameter = factory.createParameterDeclaration(
       undefined,
       undefined,
       "value",
@@ -174,12 +177,15 @@ export function generateValidator(
       factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword),
     );
 
-    // Create return type for parse function
-    const parseReturnType = factory.createTypeReferenceNode(typeName, undefined);
+    // Create return type for unsafeValidate function
+    const unsafeReturnType = factory.createTypeReferenceNode(
+      typeName,
+      undefined,
+    );
 
-    // Create parse function body
-    const parseStatements: ts.Statement[] = [
-      // const result = validateXxx(value);
+    // Create unsafeValidate function body
+    const unsafeStatements: ts.Statement[] = [
+      // const result = validateXxx(value, { abortEarly: true });
       factory.createVariableStatement(
         undefined,
         factory.createVariableDeclarationList(
@@ -191,7 +197,15 @@ export function generateValidator(
               factory.createCallExpression(
                 factory.createIdentifier(validatorName),
                 undefined,
-                [factory.createIdentifier("value")],
+                [
+                  factory.createIdentifier("value"),
+                  factory.createObjectLiteralExpression([
+                    factory.createPropertyAssignment(
+                      "abortEarly",
+                      factory.createTrue(),
+                    ),
+                  ]),
+                ],
               ),
             ),
           ],
@@ -214,42 +228,8 @@ export function generateValidator(
                 factory.createIdentifier("Error"),
                 undefined,
                 [
-                  factory.createTemplateExpression(
-                    factory.createTemplateHead(`Validation failed for ${typeName}: `),
-                    [
-                      factory.createTemplateSpan(
-                        factory.createCallExpression(
-                          factory.createPropertyAccessExpression(
-                            factory.createPropertyAccessExpression(
-                              factory.createIdentifier("result"),
-                              "issues",
-                            ),
-                            "map",
-                          ),
-                          undefined,
-                          [
-                            factory.createArrowFunction(
-                              undefined,
-                              undefined,
-                              [
-                                factory.createParameterDeclaration(
-                                  undefined,
-                                  undefined,
-                                  "i",
-                                ),
-                              ],
-                              undefined,
-                              factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                              factory.createPropertyAccessExpression(
-                                factory.createIdentifier("i"),
-                                "message",
-                              ),
-                            ),
-                          ],
-                        ),
-                        factory.createTemplateTail(""),
-                      ),
-                    ],
+                  factory.createStringLiteral(
+                    `Validation failed: value is not ${typeName}`,
                   ),
                 ],
               ),
@@ -267,20 +247,20 @@ export function generateValidator(
       ),
     ];
 
-    const parseFunctionBody = factory.createBlock(parseStatements, true);
+    const unsafeFunctionBody = factory.createBlock(unsafeStatements, true);
 
-    // Create parse function declaration
-    const parseFunctionDecl = factory.createFunctionDeclaration(
+    // Create unsafeValidate function declaration
+    const unsafeFunctionDecl = factory.createFunctionDeclaration(
       modifiers,
       undefined,
-      parseFunctionName,
+      unsafeFunctionName,
       undefined,
-      [parseParameter],
-      parseReturnType,
-      parseFunctionBody,
+      [unsafeParameter],
+      unsafeReturnType,
+      unsafeFunctionBody,
     );
 
-    finalStatements.push(parseFunctionDecl);
+    finalStatements.push(unsafeFunctionDecl);
   }
 
   // Create source file
@@ -393,7 +373,10 @@ function generateChecks(
                               factory.createArrayLiteralExpression([
                                 factory.createSpreadElement(pathExpr),
                                 factory.createSpreadElement(
-                                  factory.createPropertyAccessExpression(issueVar, "path"),
+                                  factory.createPropertyAccessExpression(
+                                    issueVar,
+                                    "path",
+                                  ),
                                 ),
                               ]),
                             ),
@@ -505,7 +488,9 @@ function generateChecks(
       factory.createArrayLiteralExpression(
         schema.enum.map((v: unknown) => createLiteralExpression(v)),
       ),
-      factory.createArrayTypeNode(factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword)),
+      factory.createArrayTypeNode(
+        factory.createKeywordTypeNode(ts.SyntaxKind.UnknownKeyword),
+      ),
     );
     const includesCall = factory.createCallExpression(
       factory.createPropertyAccessExpression(enumArray, "includes"),
@@ -513,7 +498,9 @@ function generateChecks(
       [valueExpr],
     );
 
-    const expectedValues = schema.enum.map((v: unknown) => JSON.stringify(v)).join(" | ");
+    const expectedValues = schema.enum
+      .map((v: unknown) => JSON.stringify(v))
+      .join(" | ");
     statements.push(
       createInvalidValueIf(
         factory.createPrefixUnaryExpression(
@@ -534,13 +521,27 @@ function generateChecks(
 
   // Handle oneOf
   if (schema.oneOf && node.oneOf) {
-    generateOneOfChecks(node, valueExpr, pathExpr, statements, varCounter, generatedTypes);
+    generateOneOfChecks(
+      node,
+      valueExpr,
+      pathExpr,
+      statements,
+      varCounter,
+      generatedTypes,
+    );
     return;
   }
 
   // Handle anyOf
   if (schema.anyOf && node.anyOf) {
-    generateAnyOfChecks(node, valueExpr, pathExpr, statements, varCounter, generatedTypes);
+    generateAnyOfChecks(
+      node,
+      valueExpr,
+      pathExpr,
+      statements,
+      varCounter,
+      generatedTypes,
+    );
     return;
   }
 
@@ -554,7 +555,14 @@ function generateChecks(
 
     case "number":
     case "integer":
-      generateNumberChecks(schema, type, valueExpr, pathExpr, statements, varCounter);
+      generateNumberChecks(
+        schema,
+        type,
+        valueExpr,
+        pathExpr,
+        statements,
+        varCounter,
+      );
       break;
 
     case "boolean":
@@ -588,11 +596,29 @@ function generateChecks(
       break;
 
     case "array":
-      generateArrayChecks(node, schema, valueExpr, pathExpr, statements, visited, varCounter, generatedTypes);
+      generateArrayChecks(
+        node,
+        schema,
+        valueExpr,
+        pathExpr,
+        statements,
+        visited,
+        varCounter,
+        generatedTypes,
+      );
       break;
 
     case "object":
-      generateObjectChecks(node, schema, valueExpr, pathExpr, statements, visited, varCounter, generatedTypes);
+      generateObjectChecks(
+        node,
+        schema,
+        valueExpr,
+        pathExpr,
+        statements,
+        visited,
+        varCounter,
+        generatedTypes,
+      );
       break;
 
     case "union":
@@ -630,13 +656,18 @@ function generateStringChecks(
           factory.createNumericLiteral(schema.minLength),
         ),
         pathExpr,
-        factory.createStringLiteral(`string with length >= ${schema.minLength}`),
-        factory.createTemplateExpression(factory.createTemplateHead("string with length "), [
-          factory.createTemplateSpan(
-            factory.createPropertyAccessExpression(valueExpr, "length"),
-            factory.createTemplateTail(""),
-          ),
-        ]),
+        factory.createStringLiteral(
+          `string with length >= ${schema.minLength}`,
+        ),
+        factory.createTemplateExpression(
+          factory.createTemplateHead("string with length "),
+          [
+            factory.createTemplateSpan(
+              factory.createPropertyAccessExpression(valueExpr, "length"),
+              factory.createTemplateTail(""),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -650,13 +681,18 @@ function generateStringChecks(
           factory.createNumericLiteral(schema.maxLength),
         ),
         pathExpr,
-        factory.createStringLiteral(`string with length <= ${schema.maxLength}`),
-        factory.createTemplateExpression(factory.createTemplateHead("string with length "), [
-          factory.createTemplateSpan(
-            factory.createPropertyAccessExpression(valueExpr, "length"),
-            factory.createTemplateTail(""),
-          ),
-        ]),
+        factory.createStringLiteral(
+          `string with length <= ${schema.maxLength}`,
+        ),
+        factory.createTemplateExpression(
+          factory.createTemplateHead("string with length "),
+          [
+            factory.createTemplateSpan(
+              factory.createPropertyAccessExpression(valueExpr, "length"),
+              factory.createTemplateTail(""),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -667,7 +703,9 @@ function generateStringChecks(
       new RegExp(schema.pattern);
 
       const escapedPattern = schema.pattern.replace(/\//g, "\\/");
-      const regex = factory.createRegularExpressionLiteral(`/${escapedPattern}/`);
+      const regex = factory.createRegularExpressionLiteral(
+        `/${escapedPattern}/`,
+      );
 
       constraintChecks.push(
         createInvalidStringIf(
@@ -680,7 +718,9 @@ function generateStringChecks(
             ),
           ),
           pathExpr,
-          factory.createStringLiteral(`string matching pattern /${schema.pattern}/`),
+          factory.createStringLiteral(
+            `string matching pattern /${schema.pattern}/`,
+          ),
           valueExpr,
         ),
       );
@@ -703,14 +743,21 @@ function generateStringChecks(
             factory.createCallExpression(
               factory.createIdentifier("_invalidType"),
               undefined,
-              [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral("string"), valueExpr],
+              [
+                factory.createIdentifier("issues"),
+                pathExpr,
+                factory.createStringLiteral("string"),
+                valueExpr,
+              ],
             ),
           ),
           createAbortEarlyReturn(),
         ],
         true,
       ),
-      constraintChecks.length > 0 ? factory.createBlock(constraintChecks, true) : undefined,
+      constraintChecks.length > 0
+        ? factory.createBlock(constraintChecks, true)
+        : undefined,
     ),
   );
 }
@@ -810,7 +857,10 @@ function generateNumberChecks(
           ),
         ),
       );
-    } else if (schema.exclusiveMinimum === true && schema.minimum !== undefined) {
+    } else if (
+      schema.exclusiveMinimum === true &&
+      schema.minimum !== undefined
+    ) {
       constraintChecks.push(
         createTooSmallIf(
           factory.createBinaryExpression(
@@ -848,7 +898,10 @@ function generateNumberChecks(
           ),
         ),
       );
-    } else if (schema.exclusiveMaximum === true && schema.maximum !== undefined) {
+    } else if (
+      schema.exclusiveMaximum === true &&
+      schema.maximum !== undefined
+    ) {
       constraintChecks.push(
         createTooBigIf(
           factory.createBinaryExpression(
@@ -882,14 +935,21 @@ function generateNumberChecks(
             factory.createCallExpression(
               factory.createIdentifier("_invalidType"),
               undefined,
-              [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral(type), valueExpr],
+              [
+                factory.createIdentifier("issues"),
+                pathExpr,
+                factory.createStringLiteral(type),
+                valueExpr,
+              ],
             ),
           ),
           createAbortEarlyReturn(),
         ],
         true,
       ),
-      constraintChecks.length > 0 ? factory.createBlock(constraintChecks, true) : undefined,
+      constraintChecks.length > 0
+        ? factory.createBlock(constraintChecks, true)
+        : undefined,
     ),
   );
 }
@@ -920,10 +980,29 @@ function generateArrayChecks(
   const tupleInfo = getTupleInfo(node, schema);
 
   if (tupleInfo.isTuple) {
-    generateTupleChecks(node, schema, tupleInfo, valueExpr, pathExpr, arrayChecks, visited, varCounter, generatedTypes);
+    generateTupleChecks(
+      node,
+      schema,
+      tupleInfo,
+      valueExpr,
+      pathExpr,
+      arrayChecks,
+      visited,
+      varCounter,
+      generatedTypes,
+    );
   } else {
     // Regular array checks
-    generateRegularArrayChecks(node, schema, valueExpr, pathExpr, arrayChecks, visited, varCounter, generatedTypes);
+    generateRegularArrayChecks(
+      node,
+      schema,
+      valueExpr,
+      pathExpr,
+      arrayChecks,
+      visited,
+      varCounter,
+      generatedTypes,
+    );
   }
 
   // Create if-else structure: if (!Array.isArray(value)) { error } else { checks }
@@ -940,14 +1019,21 @@ function generateArrayChecks(
             factory.createCallExpression(
               factory.createIdentifier("_invalidType"),
               undefined,
-              [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral("array"), valueExpr],
+              [
+                factory.createIdentifier("issues"),
+                pathExpr,
+                factory.createStringLiteral("array"),
+                valueExpr,
+              ],
             ),
           ),
           createAbortEarlyReturn(),
         ],
         true,
       ),
-      arrayChecks.length > 0 ? factory.createBlock(arrayChecks, true) : undefined,
+      arrayChecks.length > 0
+        ? factory.createBlock(arrayChecks, true)
+        : undefined,
     ),
   );
 }
@@ -973,13 +1059,18 @@ function generateTupleChecks(
             factory.createNumericLiteral(tupleInfo.prefixItems.length),
           ),
           pathExpr,
-          factory.createStringLiteral(`tuple with ${tupleInfo.prefixItems.length} elements`),
-          factory.createTemplateExpression(factory.createTemplateHead("array with "), [
-            factory.createTemplateSpan(
-              factory.createPropertyAccessExpression(valueExpr, "length"),
-              factory.createTemplateTail(" elements"),
-            ),
-          ]),
+          factory.createStringLiteral(
+            `tuple with ${tupleInfo.prefixItems.length} elements`,
+          ),
+          factory.createTemplateExpression(
+            factory.createTemplateHead("array with "),
+            [
+              factory.createTemplateSpan(
+                factory.createPropertyAccessExpression(valueExpr, "length"),
+                factory.createTemplateTail(" elements"),
+              ),
+            ],
+          ),
         ),
       );
     } else {
@@ -996,7 +1087,15 @@ function generateTupleChecks(
         factory.createSpreadElement(pathExpr),
         factory.createNumericLiteral(index),
       ]);
-      generateChecks(itemNode, elementAccess, elementPath, statements, visited, varCounter, generatedTypes);
+      generateChecks(
+        itemNode,
+        elementAccess,
+        elementPath,
+        statements,
+        visited,
+        varCounter,
+        generatedTypes,
+      );
     });
 
     // Validate remaining elements if items schema exists
@@ -1005,13 +1104,24 @@ function generateTupleChecks(
       const indexVar = factory.createIdentifier(indexVarName);
       const itemStatements: ts.Statement[] = [];
 
-      const elementAccess = factory.createElementAccessExpression(valueExpr, indexVar);
+      const elementAccess = factory.createElementAccessExpression(
+        valueExpr,
+        indexVar,
+      );
       const elementPath = factory.createArrayLiteralExpression([
         factory.createSpreadElement(pathExpr),
         indexVar,
       ]);
 
-      generateChecks(node.items, elementAccess, elementPath, itemStatements, visited, varCounter, generatedTypes);
+      generateChecks(
+        node.items,
+        elementAccess,
+        elementPath,
+        itemStatements,
+        visited,
+        varCounter,
+        generatedTypes,
+      );
 
       if (itemStatements.length > 0) {
         statements.push(
@@ -1032,7 +1142,10 @@ function generateTupleChecks(
               ts.SyntaxKind.LessThanToken,
               factory.createPropertyAccessExpression(valueExpr, "length"),
             ),
-            factory.createPostfixUnaryExpression(indexVar, ts.SyntaxKind.PlusPlusToken),
+            factory.createPostfixUnaryExpression(
+              indexVar,
+              ts.SyntaxKind.PlusPlusToken,
+            ),
             factory.createBlock(itemStatements, true),
           ),
         );
@@ -1047,13 +1160,18 @@ function generateTupleChecks(
           factory.createNumericLiteral(tupleInfo.itemSchemas.length),
         ),
         pathExpr,
-        factory.createStringLiteral(`tuple with ${tupleInfo.itemSchemas.length} elements`),
-        factory.createTemplateExpression(factory.createTemplateHead("array with "), [
-          factory.createTemplateSpan(
-            factory.createPropertyAccessExpression(valueExpr, "length"),
-            factory.createTemplateTail(" elements"),
-          ),
-        ]),
+        factory.createStringLiteral(
+          `tuple with ${tupleInfo.itemSchemas.length} elements`,
+        ),
+        factory.createTemplateExpression(
+          factory.createTemplateHead("array with "),
+          [
+            factory.createTemplateSpan(
+              factory.createPropertyAccessExpression(valueExpr, "length"),
+              factory.createTemplateTail(" elements"),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -1067,7 +1185,15 @@ function generateTupleChecks(
         factory.createNumericLiteral(index),
       ]);
       const itemNode = node.compileSchema(itemSchema);
-      generateChecks(itemNode, elementAccess, elementPath, statements, visited, varCounter, generatedTypes);
+      generateChecks(
+        itemNode,
+        elementAccess,
+        elementPath,
+        statements,
+        visited,
+        varCounter,
+        generatedTypes,
+      );
     });
   }
 }
@@ -1090,19 +1216,37 @@ function generateRegularArrayChecks(
     const indexVar = factory.createIdentifier(indexVarName);
     const itemStatements: ts.Statement[] = [];
 
-    const elementAccess = factory.createElementAccessExpression(valueExpr, indexVar);
+    const elementAccess = factory.createElementAccessExpression(
+      valueExpr,
+      indexVar,
+    );
     const elementPath = factory.createArrayLiteralExpression([
       factory.createSpreadElement(pathExpr),
       indexVar,
     ]);
 
-    generateChecks(node.items, elementAccess, elementPath, itemStatements, visited, varCounter, generatedTypes);
+    generateChecks(
+      node.items,
+      elementAccess,
+      elementPath,
+      itemStatements,
+      visited,
+      varCounter,
+      generatedTypes,
+    );
 
     if (itemStatements.length > 0) {
       statements.push(
         factory.createForStatement(
           factory.createVariableDeclarationList(
-            [factory.createVariableDeclaration(indexVar, undefined, undefined, factory.createNumericLiteral(0))],
+            [
+              factory.createVariableDeclaration(
+                indexVar,
+                undefined,
+                undefined,
+                factory.createNumericLiteral(0),
+              ),
+            ],
             ts.NodeFlags.Let,
           ),
           factory.createBinaryExpression(
@@ -1110,7 +1254,10 @@ function generateRegularArrayChecks(
             ts.SyntaxKind.LessThanToken,
             factory.createPropertyAccessExpression(valueExpr, "length"),
           ),
-          factory.createPostfixUnaryExpression(indexVar, ts.SyntaxKind.PlusPlusToken),
+          factory.createPostfixUnaryExpression(
+            indexVar,
+            ts.SyntaxKind.PlusPlusToken,
+          ),
           factory.createBlock(itemStatements, true),
         ),
       );
@@ -1133,13 +1280,18 @@ function addArrayConstraintChecks(
           factory.createNumericLiteral(schema.minItems),
         ),
         pathExpr,
-        factory.createStringLiteral(`array with at least ${schema.minItems} items`),
-        factory.createTemplateExpression(factory.createTemplateHead("array with "), [
-          factory.createTemplateSpan(
-            factory.createPropertyAccessExpression(valueExpr, "length"),
-            factory.createTemplateTail(" items"),
-          ),
-        ]),
+        factory.createStringLiteral(
+          `array with at least ${schema.minItems} items`,
+        ),
+        factory.createTemplateExpression(
+          factory.createTemplateHead("array with "),
+          [
+            factory.createTemplateSpan(
+              factory.createPropertyAccessExpression(valueExpr, "length"),
+              factory.createTemplateTail(" items"),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1153,13 +1305,18 @@ function addArrayConstraintChecks(
           factory.createNumericLiteral(schema.maxItems),
         ),
         pathExpr,
-        factory.createStringLiteral(`array with at most ${schema.maxItems} items`),
-        factory.createTemplateExpression(factory.createTemplateHead("array with "), [
-          factory.createTemplateSpan(
-            factory.createPropertyAccessExpression(valueExpr, "length"),
-            factory.createTemplateTail(" items"),
-          ),
-        ]),
+        factory.createStringLiteral(
+          `array with at most ${schema.maxItems} items`,
+        ),
+        factory.createTemplateExpression(
+          factory.createTemplateHead("array with "),
+          [
+            factory.createTemplateSpan(
+              factory.createPropertyAccessExpression(valueExpr, "length"),
+              factory.createTemplateTail(" items"),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1169,7 +1326,11 @@ function addArrayConstraintChecks(
       createNotUniqueIf(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(
-            factory.createNewExpression(factory.createIdentifier("Set"), undefined, [valueExpr]),
+            factory.createNewExpression(
+              factory.createIdentifier("Set"),
+              undefined,
+              [valueExpr],
+            ),
             "size",
           ),
           ts.SyntaxKind.ExclamationEqualsEqualsToken,
@@ -1210,7 +1371,10 @@ function generateObjectChecks(
     factory.createPrefixUnaryExpression(
       ts.SyntaxKind.ExclamationToken,
       factory.createCallExpression(
-        factory.createPropertyAccessExpression(factory.createIdentifier("Array"), "isArray"),
+        factory.createPropertyAccessExpression(
+          factory.createIdentifier("Array"),
+          "isArray",
+        ),
         undefined,
         [valueExpr],
       ),
@@ -1250,7 +1414,10 @@ function generateObjectChecks(
     for (const [prop, propNode] of Object.entries(node.properties)) {
       const propAccess = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(prop)
         ? factory.createPropertyAccessExpression(valueExpr, prop)
-        : factory.createElementAccessExpression(valueExpr, factory.createStringLiteral(prop));
+        : factory.createElementAccessExpression(
+            valueExpr,
+            factory.createStringLiteral(prop),
+          );
 
       const propPath = factory.createArrayLiteralExpression([
         factory.createSpreadElement(pathExpr),
@@ -1258,7 +1425,15 @@ function generateObjectChecks(
       ]);
 
       const propStatements: ts.Statement[] = [];
-      generateChecks(propNode, propAccess, propPath, propStatements, visited, varCounter, generatedTypes);
+      generateChecks(
+        propNode,
+        propAccess,
+        propPath,
+        propStatements,
+        visited,
+        varCounter,
+        generatedTypes,
+      );
 
       if (propStatements.length > 0) {
         // Always wrap in "prop" in value check for TypeScript narrowing
@@ -1284,15 +1459,22 @@ function generateObjectChecks(
 
     const arrayLiteral =
       knownProps.length > 0
-        ? factory.createArrayLiteralExpression(knownProps.map((p) => factory.createStringLiteral(p)))
+        ? factory.createArrayLiteralExpression(
+            knownProps.map((p) => factory.createStringLiteral(p)),
+          )
         : factory.createAsExpression(
             factory.createArrayLiteralExpression([]),
-            factory.createArrayTypeNode(factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword)),
+            factory.createArrayTypeNode(
+              factory.createKeywordTypeNode(ts.SyntaxKind.StringKeyword),
+            ),
           );
 
     objectChecks.push(
       factory.createForInStatement(
-        factory.createVariableDeclarationList([factory.createVariableDeclaration(keyVar)], ts.NodeFlags.Const),
+        factory.createVariableDeclarationList(
+          [factory.createVariableDeclaration(keyVar)],
+          ts.NodeFlags.Const,
+        ),
         valueExpr,
         factory.createBlock(
           [
@@ -1300,7 +1482,10 @@ function generateObjectChecks(
               factory.createPrefixUnaryExpression(
                 ts.SyntaxKind.ExclamationToken,
                 factory.createCallExpression(
-                  factory.createPropertyAccessExpression(arrayLiteral, "includes"),
+                  factory.createPropertyAccessExpression(
+                    arrayLiteral,
+                    "includes",
+                  ),
                   undefined,
                   [keyVar],
                 ),
@@ -1309,16 +1494,22 @@ function generateObjectChecks(
                 factory.createSpreadElement(pathExpr),
                 keyVar,
               ]),
-              factory.createTemplateExpression(factory.createTemplateHead("one of known properties ("), [
-                factory.createTemplateSpan(
-                  factory.createCallExpression(
-                    factory.createPropertyAccessExpression(arrayLiteral, "join"),
-                    undefined,
-                    [factory.createStringLiteral(", ")],
+              factory.createTemplateExpression(
+                factory.createTemplateHead("one of known properties ("),
+                [
+                  factory.createTemplateSpan(
+                    factory.createCallExpression(
+                      factory.createPropertyAccessExpression(
+                        arrayLiteral,
+                        "join",
+                      ),
+                      undefined,
+                      [factory.createStringLiteral(", ")],
+                    ),
+                    factory.createTemplateTail(")"),
                   ),
-                  factory.createTemplateTail(")"),
-                ),
-              ]),
+                ],
+              ),
               keyVar,
             ),
           ],
@@ -1342,14 +1533,21 @@ function generateObjectChecks(
             factory.createCallExpression(
               factory.createIdentifier("_invalidType"),
               undefined,
-              [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral("object"), valueExpr],
+              [
+                factory.createIdentifier("issues"),
+                pathExpr,
+                factory.createStringLiteral("object"),
+                valueExpr,
+              ],
             ),
           ),
           createAbortEarlyReturn(),
         ],
         true,
       ),
-      objectChecks.length > 0 ? factory.createBlock(objectChecks, true) : undefined,
+      objectChecks.length > 0
+        ? factory.createBlock(objectChecks, true)
+        : undefined,
     ),
   );
 }
@@ -1366,7 +1564,10 @@ function addObjectConstraintChecks(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(
             factory.createCallExpression(
-              factory.createPropertyAccessExpression(factory.createIdentifier("Object"), "keys"),
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier("Object"),
+                "keys",
+              ),
               undefined,
               [valueExpr],
             ),
@@ -1376,20 +1577,28 @@ function addObjectConstraintChecks(
           factory.createNumericLiteral(schema.minProperties),
         ),
         pathExpr,
-        factory.createStringLiteral(`object with at least ${schema.minProperties} properties`),
-        factory.createTemplateExpression(factory.createTemplateHead("object with "), [
-          factory.createTemplateSpan(
-            factory.createPropertyAccessExpression(
-              factory.createCallExpression(
-                factory.createPropertyAccessExpression(factory.createIdentifier("Object"), "keys"),
-                undefined,
-                [valueExpr],
+        factory.createStringLiteral(
+          `object with at least ${schema.minProperties} properties`,
+        ),
+        factory.createTemplateExpression(
+          factory.createTemplateHead("object with "),
+          [
+            factory.createTemplateSpan(
+              factory.createPropertyAccessExpression(
+                factory.createCallExpression(
+                  factory.createPropertyAccessExpression(
+                    factory.createIdentifier("Object"),
+                    "keys",
+                  ),
+                  undefined,
+                  [valueExpr],
+                ),
+                "length",
               ),
-              "length",
+              factory.createTemplateTail(" properties"),
             ),
-            factory.createTemplateTail(" properties"),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -1400,7 +1609,10 @@ function addObjectConstraintChecks(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(
             factory.createCallExpression(
-              factory.createPropertyAccessExpression(factory.createIdentifier("Object"), "keys"),
+              factory.createPropertyAccessExpression(
+                factory.createIdentifier("Object"),
+                "keys",
+              ),
               undefined,
               [valueExpr],
             ),
@@ -1410,20 +1622,28 @@ function addObjectConstraintChecks(
           factory.createNumericLiteral(schema.maxProperties),
         ),
         pathExpr,
-        factory.createStringLiteral(`object with at most ${schema.maxProperties} properties`),
-        factory.createTemplateExpression(factory.createTemplateHead("object with "), [
-          factory.createTemplateSpan(
-            factory.createPropertyAccessExpression(
-              factory.createCallExpression(
-                factory.createPropertyAccessExpression(factory.createIdentifier("Object"), "keys"),
-                undefined,
-                [valueExpr],
+        factory.createStringLiteral(
+          `object with at most ${schema.maxProperties} properties`,
+        ),
+        factory.createTemplateExpression(
+          factory.createTemplateHead("object with "),
+          [
+            factory.createTemplateSpan(
+              factory.createPropertyAccessExpression(
+                factory.createCallExpression(
+                  factory.createPropertyAccessExpression(
+                    factory.createIdentifier("Object"),
+                    "keys",
+                  ),
+                  undefined,
+                  [valueExpr],
+                ),
+                "length",
               ),
-              "length",
+              factory.createTemplateTail(" properties"),
             ),
-            factory.createTemplateTail(" properties"),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -1444,7 +1664,14 @@ function generateOneOfChecks(
     factory.createVariableStatement(
       undefined,
       factory.createVariableDeclarationList(
-        [factory.createVariableDeclaration(matchCountVarName, undefined, undefined, factory.createNumericLiteral(0))],
+        [
+          factory.createVariableDeclaration(
+            matchCountVarName,
+            undefined,
+            undefined,
+            factory.createNumericLiteral(0),
+          ),
+        ],
         ts.NodeFlags.Let,
       ),
     ),
@@ -1464,7 +1691,9 @@ function generateOneOfChecks(
             factory.createVariableDeclaration(
               subIssuesVarName,
               undefined,
-              factory.createArrayTypeNode(factory.createTypeReferenceNode("ValidationIssue", undefined)),
+              factory.createArrayTypeNode(
+                factory.createTypeReferenceNode("ValidationIssue", undefined),
+              ),
               factory.createArrayLiteralExpression([]),
             ),
           ],
@@ -1476,7 +1705,15 @@ function generateOneOfChecks(
     // Use temp issues in validation - we need to temporarily swap issues
     // This is complex, so we'll use an IIFE approach
     const tempStatements: ts.Statement[] = [];
-    generateChecks(subNode, valueExpr, pathExpr, tempStatements, subVisited, varCounter, generatedTypes);
+    generateChecks(
+      subNode,
+      valueExpr,
+      pathExpr,
+      tempStatements,
+      subVisited,
+      varCounter,
+      generatedTypes,
+    );
 
     // Check if validation succeeded (no issues in temp array)
     const iifeBody = [
@@ -1487,17 +1724,24 @@ function generateOneOfChecks(
             factory.createVariableDeclaration(
               "_tempIssues",
               undefined,
-              factory.createArrayTypeNode(factory.createTypeReferenceNode("ValidationIssue", undefined)),
+              factory.createArrayTypeNode(
+                factory.createTypeReferenceNode("ValidationIssue", undefined),
+              ),
               factory.createArrayLiteralExpression([]),
             ),
           ],
           ts.NodeFlags.Const,
         ),
       ),
-      ...tempStatements.map((stmt) => replaceIssuesReference(stmt, "_tempIssues")),
+      ...tempStatements.map((stmt) =>
+        replaceIssuesReference(stmt, "_tempIssues"),
+      ),
       factory.createReturnStatement(
         factory.createBinaryExpression(
-          factory.createPropertyAccessExpression(factory.createIdentifier("_tempIssues"), "length"),
+          factory.createPropertyAccessExpression(
+            factory.createIdentifier("_tempIssues"),
+            "length",
+          ),
           ts.SyntaxKind.EqualsEqualsEqualsToken,
           factory.createNumericLiteral(0),
         ),
@@ -1547,12 +1791,15 @@ function generateOneOfChecks(
       ),
       pathExpr,
       factory.createStringLiteral("value matching exactly one schema"),
-      factory.createTemplateExpression(factory.createTemplateHead("value matching "), [
-        factory.createTemplateSpan(
-          factory.createIdentifier(matchCountVarName),
-          factory.createTemplateTail(" schemas"),
-        ),
-      ]),
+      factory.createTemplateExpression(
+        factory.createTemplateHead("value matching "),
+        [
+          factory.createTemplateSpan(
+            factory.createIdentifier(matchCountVarName),
+            factory.createTemplateTail(" schemas"),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -1572,7 +1819,14 @@ function generateAnyOfChecks(
     factory.createVariableStatement(
       undefined,
       factory.createVariableDeclarationList(
-        [factory.createVariableDeclaration(matchedVarName, undefined, undefined, factory.createFalse())],
+        [
+          factory.createVariableDeclaration(
+            matchedVarName,
+            undefined,
+            undefined,
+            factory.createFalse(),
+          ),
+        ],
         ts.NodeFlags.Let,
       ),
     ),
@@ -1581,7 +1835,15 @@ function generateAnyOfChecks(
   for (const subNode of node.anyOf) {
     const tempStatements: ts.Statement[] = [];
     const subVisited = new WeakSet<SchemaNode>();
-    generateChecks(subNode, valueExpr, pathExpr, tempStatements, subVisited, varCounter, generatedTypes);
+    generateChecks(
+      subNode,
+      valueExpr,
+      pathExpr,
+      tempStatements,
+      subVisited,
+      varCounter,
+      generatedTypes,
+    );
 
     const iifeBody = [
       factory.createVariableStatement(
@@ -1591,17 +1853,24 @@ function generateAnyOfChecks(
             factory.createVariableDeclaration(
               "_tempIssues",
               undefined,
-              factory.createArrayTypeNode(factory.createTypeReferenceNode("ValidationIssue", undefined)),
+              factory.createArrayTypeNode(
+                factory.createTypeReferenceNode("ValidationIssue", undefined),
+              ),
               factory.createArrayLiteralExpression([]),
             ),
           ],
           ts.NodeFlags.Const,
         ),
       ),
-      ...tempStatements.map((stmt) => replaceIssuesReference(stmt, "_tempIssues")),
+      ...tempStatements.map((stmt) =>
+        replaceIssuesReference(stmt, "_tempIssues"),
+      ),
       factory.createReturnStatement(
         factory.createBinaryExpression(
-          factory.createPropertyAccessExpression(factory.createIdentifier("_tempIssues"), "length"),
+          factory.createPropertyAccessExpression(
+            factory.createIdentifier("_tempIssues"),
+            "length",
+          ),
           ts.SyntaxKind.EqualsEqualsEqualsToken,
           factory.createNumericLiteral(0),
         ),
@@ -1709,7 +1978,10 @@ function generateUnionTypeChecks(
 }
 
 // Helper function to replace references to "issues" with a different variable
-function replaceIssuesReference(stmt: ts.Statement, newName: string): ts.Statement {
+function replaceIssuesReference(
+  stmt: ts.Statement,
+  newName: string,
+): ts.Statement {
   const transformer: ts.TransformerFactory<ts.Statement> = (context) => {
     const visit: ts.Visitor = (node) => {
       if (ts.isIdentifier(node) && node.text === "issues") {
@@ -1744,7 +2016,12 @@ function createInvalidTypeIf(
           factory.createCallExpression(
             factory.createIdentifier("_invalidType"),
             undefined,
-            [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral(expected), valueExpr],
+            [
+              factory.createIdentifier("issues"),
+              pathExpr,
+              factory.createStringLiteral(expected),
+              valueExpr,
+            ],
           ),
         ),
         createAbortEarlyReturn(),
@@ -1767,18 +2044,33 @@ function createInvalidTypeExprIf(
       [
         factory.createExpressionStatement(
           factory.createCallExpression(
-            factory.createPropertyAccessExpression(factory.createIdentifier("issues"), "push"),
+            factory.createPropertyAccessExpression(
+              factory.createIdentifier("issues"),
+              "push",
+            ),
             undefined,
             [
               factory.createObjectLiteralExpression([
-                factory.createPropertyAssignment("code", factory.createStringLiteral("invalid_type")),
+                factory.createPropertyAssignment(
+                  "code",
+                  factory.createStringLiteral("invalid_type"),
+                ),
                 factory.createPropertyAssignment("path", pathExpr),
                 factory.createPropertyAssignment(
                   "message",
-                  factory.createTemplateExpression(factory.createTemplateHead("Expected "), [
-                    factory.createTemplateSpan(expectedExpr, factory.createTemplateMiddle(", received ")),
-                    factory.createTemplateSpan(receivedExpr, factory.createTemplateTail("")),
-                  ]),
+                  factory.createTemplateExpression(
+                    factory.createTemplateHead("Expected "),
+                    [
+                      factory.createTemplateSpan(
+                        expectedExpr,
+                        factory.createTemplateMiddle(", received "),
+                      ),
+                      factory.createTemplateSpan(
+                        receivedExpr,
+                        factory.createTemplateTail(""),
+                      ),
+                    ],
+                  ),
                 ),
                 factory.createPropertyAssignment("expected", expectedExpr),
                 factory.createPropertyAssignment("received", receivedExpr),
@@ -1806,7 +2098,11 @@ function createMissingKeyIf(
           factory.createCallExpression(
             factory.createIdentifier("_missingKey"),
             undefined,
-            [factory.createIdentifier("issues"), pathExpr, factory.createStringLiteral(key)],
+            [
+              factory.createIdentifier("issues"),
+              pathExpr,
+              factory.createStringLiteral(key),
+            ],
           ),
         ),
         createAbortEarlyReturn(),
@@ -1971,7 +2267,12 @@ function createUnrecognizedKeyIf(
           factory.createCallExpression(
             factory.createIdentifier("_unrecognizedKey"),
             undefined,
-            [factory.createIdentifier("issues"), pathExpr, expectedExpr, keyExpr],
+            [
+              factory.createIdentifier("issues"),
+              pathExpr,
+              expectedExpr,
+              keyExpr,
+            ],
           ),
         ),
         createAbortEarlyReturn(),
@@ -1990,14 +2291,6 @@ function createAbortEarlyReturn(): ts.Statement {
         factory.createShorthandPropertyAssignment("issues"),
       ]),
     ),
-  );
-}
-
-function createGetTypeCall(valueExpr: ts.Expression): ts.Expression {
-  return factory.createCallExpression(
-    factory.createIdentifier("_getType"),
-    undefined,
-    [valueExpr],
   );
 }
 
@@ -2032,7 +2325,10 @@ function normalizeType(type?: string | string[]): string {
   return type;
 }
 
-function generateUniqueVarName(baseName: string, counter: { count: number }): string {
+function generateUniqueVarName(
+  baseName: string,
+  counter: { count: number },
+): string {
   counter.count++;
   return `${baseName}${counter.count}`;
 }

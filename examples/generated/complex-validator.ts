@@ -722,10 +722,10 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
     }
     return { success: true, data: value as Complex };
 }
-export function parseComplex(value: unknown): Complex {
-    const result = validateComplex(value);
+export function unsafeValidateComplex(value: unknown): Complex {
+    const result = validateComplex(value, { abortEarly: true });
     if (!result.success) {
-        throw new Error(`Validation failed for Complex: ${result.issues.map(i => i.message)}`);
+        throw new Error("Validation failed: value is not Complex");
     }
     return result.data;
 }

@@ -1217,7 +1217,9 @@ describe("generate", () => {
     );
     // Should check that no additional properties are present
     expect(result.validatorCode).toMatch(/for \(const key\d+ in value\)/);
-    expect(result.validatorCode).toMatch(/\(\[\] as string\[\]\)\.includes\(key\d+\)/);
+    expect(result.validatorCode).toMatch(
+      /\(\[\] as string\[\]\)\.includes\(key\d+\)/,
+    );
   });
 
   // Step 3: Tests for targets option

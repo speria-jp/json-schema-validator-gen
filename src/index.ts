@@ -2,13 +2,8 @@ export { generate } from "./generator";
 export type {
   GenerateOptions,
   GenerateResult,
-  ValidationResult,
   ValidationIssue,
   ValidationIssueCode,
   ValidationOptions,
+  ValidationResult,
 } from "./types";
-export {
-  flattenIssues,
-  formatIssues,
-  issuePath,
-} from "./runtime/validation-helpers";

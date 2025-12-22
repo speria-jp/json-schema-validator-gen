@@ -185,14 +185,14 @@ describe("Runtime validation tests", () => {
   describe("User validator", () => {
     let validateUser: (value: unknown) => ValidationResult<unknown>;
     // biome-ignore lint/suspicious/noExplicitAny: User type is imported dynamically
-    let parseUser: (value: unknown) => any;
+    let unsafeValidateUser: (value: unknown) => any;
 
     test("setup", async () => {
       const userValidator = await import(
         join(generatedDir, "user-validator.ts")
       );
       validateUser = userValidator.validateUser;
-      parseUser = userValidator.parseUser;
+      unsafeValidateUser = userValidator.unsafeValidateUser;
     });
 
     test("validates valid user objects", () => {
@@ -298,18 +298,18 @@ describe("Runtime validation tests", () => {
       }
     });
 
-    test("parseUser returns value for valid objects", () => {
+    test("unsafeValidateUser returns value for valid objects", () => {
       const validUser = {
         id: 1,
         name: "John Doe",
         email: "john@example.com",
       };
 
-      const result = parseUser(validUser);
+      const result = unsafeValidateUser(validUser);
       expect(result).toEqual(validUser);
     });
 
-    test("parseUser throws for invalid objects", () => {
+    test("unsafeValidateUser throws for invalid objects", () => {
       const invalidUsers = [
         { id: 1, name: "John" }, // missing email
         { id: "1", name: "John", email: "john@example.com" }, // invalid id type
@@ -319,7 +319,9 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const user of invalidUsers) {
-        expect(() => parseUser(user)).toThrow("Validation failed for User:");
+        expect(() => unsafeValidateUser(user)).toThrow(
+          "Validation failed: value is not User",
+        );
       }
     });
   });
@@ -327,14 +329,14 @@ describe("Runtime validation tests", () => {
   describe("Complex validator", () => {
     let validateComplex: (value: unknown) => ValidationResult<unknown>;
     // biome-ignore lint/suspicious/noExplicitAny: Complex type is imported dynamically
-    let parseComplex: (value: unknown) => any;
+    let unsafeValidateComplex: (value: unknown) => any;
 
     test("setup", async () => {
       const complexValidator = await import(
         join(generatedDir, "complex-validator.ts")
       );
       validateComplex = complexValidator.validateComplex;
-      parseComplex = complexValidator.parseComplex;
+      unsafeValidateComplex = complexValidator.unsafeValidateComplex;
     });
 
     test("validates valid complex objects", () => {
@@ -630,7 +632,7 @@ describe("Runtime validation tests", () => {
       }
     });
 
-    test("parseComplex returns value for valid objects", () => {
+    test("unsafeValidateComplex returns value for valid objects", () => {
       const validObject = {
         id: 1,
         name: "Product 1",
@@ -643,11 +645,11 @@ describe("Runtime validation tests", () => {
         ],
       };
 
-      const result = parseComplex(validObject);
+      const result = unsafeValidateComplex(validObject);
       expect(result).toEqual(validObject);
     });
 
-    test("parseComplex throws for invalid objects", () => {
+    test("unsafeValidateComplex throws for invalid objects", () => {
       const invalidObjects = [
         { id: 1, name: "Product" }, // missing price
         { id: 1, name: "Product", price: -1 }, // invalid price
@@ -657,7 +659,9 @@ describe("Runtime validation tests", () => {
       ];
 
       for (const obj of invalidObjects) {
-        expect(() => parseComplex(obj)).toThrow("Validation failed for Complex:");
+        expect(() => unsafeValidateComplex(obj)).toThrow(
+          "Validation failed: value is not Complex",
+        );
       }
     });
   });
@@ -749,20 +753,20 @@ describe("Runtime validation tests", () => {
     let validatePost: (value: unknown) => ValidationResult<unknown>;
     let validateComment: (value: unknown) => ValidationResult<unknown>;
     // biome-ignore lint/suspicious/noExplicitAny: Types are imported dynamically
-    let parseUser: (value: unknown) => any;
+    let unsafeValidateUser: (value: unknown) => any;
     // biome-ignore lint/suspicious/noExplicitAny: Types are imported dynamically
-    let parsePost: (value: unknown) => any;
+    let unsafeValidatePost: (value: unknown) => any;
     // biome-ignore lint/suspicious/noExplicitAny: Types are imported dynamically
-    let parseComment: (value: unknown) => any;
+    let unsafeValidateComment: (value: unknown) => any;
 
     test("setup", async () => {
       const multiTypes = await import(join(generatedDir, "multi-types.ts"));
       validateUser = multiTypes.validateUser;
       validatePost = multiTypes.validatePost;
       validateComment = multiTypes.validateComment;
-      parseUser = multiTypes.parseUser;
-      parsePost = multiTypes.parsePost;
-      parseComment = multiTypes.parseComment;
+      unsafeValidateUser = multiTypes.unsafeValidateUser;
+      unsafeValidatePost = multiTypes.unsafeValidatePost;
+      unsafeValidateComment = multiTypes.unsafeValidateComment;
     });
 
     test("validates valid User objects", () => {
@@ -916,24 +920,26 @@ describe("Runtime validation tests", () => {
       }
     });
 
-    test("parseUser returns value for valid objects", () => {
+    test("unsafeValidateUser returns value for valid objects", () => {
       const validUser = {
         id: "user-1",
         name: "John Doe",
         email: "john@example.com",
       };
 
-      const result = parseUser(validUser);
+      const result = unsafeValidateUser(validUser);
       expect(result).toEqual(validUser);
     });
 
-    test("parseUser throws for invalid objects", () => {
+    test("unsafeValidateUser throws for invalid objects", () => {
       const invalidUser = { id: "user-1", name: "John" }; // missing email
 
-      expect(() => parseUser(invalidUser)).toThrow("Validation failed for User:");
+      expect(() => unsafeValidateUser(invalidUser)).toThrow(
+        "Validation failed: value is not User",
+      );
     });
 
-    test("parsePost returns value for valid objects", () => {
+    test("unsafeValidatePost returns value for valid objects", () => {
       const validPost = {
         id: "post-1",
         title: "First Post",
@@ -941,17 +947,19 @@ describe("Runtime validation tests", () => {
         authorId: "user-1",
       };
 
-      const result = parsePost(validPost);
+      const result = unsafeValidatePost(validPost);
       expect(result).toEqual(validPost);
     });
 
-    test("parsePost throws for invalid objects", () => {
+    test("unsafeValidatePost throws for invalid objects", () => {
       const invalidPost = { id: "post-1", title: "Title", content: "Content" }; // missing authorId
 
-      expect(() => parsePost(invalidPost)).toThrow("Validation failed for Post:");
+      expect(() => unsafeValidatePost(invalidPost)).toThrow(
+        "Validation failed: value is not Post",
+      );
     });
 
-    test("parseComment returns value for valid objects", () => {
+    test("unsafeValidateComment returns value for valid objects", () => {
       const validComment = {
         id: "comment-1",
         postId: "post-1",
@@ -960,11 +968,11 @@ describe("Runtime validation tests", () => {
         createdAt: "2025-01-01T12:00:00Z",
       };
 
-      const result = parseComment(validComment);
+      const result = unsafeValidateComment(validComment);
       expect(result).toEqual(validComment);
     });
 
-    test("parseComment throws for invalid objects", () => {
+    test("unsafeValidateComment throws for invalid objects", () => {
       const invalidComment = {
         id: "comment-1",
         postId: "post-1",
@@ -972,8 +980,8 @@ describe("Runtime validation tests", () => {
         text: "Comment",
       }; // missing createdAt
 
-      expect(() => parseComment(invalidComment)).toThrow(
-        "Validation failed for Comment:",
+      expect(() => unsafeValidateComment(invalidComment)).toThrow(
+        "Validation failed: value is not Comment",
       );
     });
   });
@@ -999,10 +1007,14 @@ describe("Runtime validation tests", () => {
     });
 
     test("invalid_type error for wrong type", () => {
-      const result = validateUser({ id: "not-a-number", name: "John", email: "john@example.com" });
+      const result = validateUser({
+        id: "not-a-number",
+        name: "John",
+        email: "john@example.com",
+      });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.path.join(".") === "id");
+        const issue = result.issues.find((i) => i.path.join(".") === "id");
         expect(issue).toBeDefined();
         expect(issue?.code).toBe("invalid_type");
         expect(issue?.path).toEqual(["id"]);
@@ -1044,7 +1056,9 @@ describe("Runtime validation tests", () => {
       const result = validateUser({ id: 1, name: "John" }); // missing email
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "missing_key" && i.expected.includes("email"));
+        const issue = result.issues.find(
+          (i) => i.code === "missing_key" && i.expected.includes("email"),
+        );
         expect(issue).toBeDefined();
         expect(issue?.code).toBe("missing_key");
         expect(issue?.path).toEqual([]);
@@ -1054,10 +1068,14 @@ describe("Runtime validation tests", () => {
     });
 
     test("too_small error for number below minimum", () => {
-      const result = validateUser({ id: 0, name: "John", email: "john@example.com" }); // id < 1
+      const result = validateUser({
+        id: 0,
+        name: "John",
+        email: "john@example.com",
+      }); // id < 1
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "too_small");
+        const issue = result.issues.find((i) => i.code === "too_small");
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["id"]);
         expect(issue?.expected).toBe("number >= 1");
@@ -1066,10 +1084,14 @@ describe("Runtime validation tests", () => {
     });
 
     test("too_small error for string below minLength", () => {
-      const result = validateUser({ id: 1, name: "", email: "john@example.com" }); // empty name
+      const result = validateUser({
+        id: 1,
+        name: "",
+        email: "john@example.com",
+      }); // empty name
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "too_small");
+        const issue = result.issues.find((i) => i.code === "too_small");
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["name"]);
         expect(issue?.expected).toBe("string with length >= 1");
@@ -1078,10 +1100,15 @@ describe("Runtime validation tests", () => {
     });
 
     test("too_big error for number above maximum", () => {
-      const result = validateUser({ id: 1, name: "John", email: "john@example.com", age: 200 }); // age > 150
+      const result = validateUser({
+        id: 1,
+        name: "John",
+        email: "john@example.com",
+        age: 200,
+      }); // age > 150
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "too_big");
+        const issue = result.issues.find((i) => i.code === "too_big");
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["age"]);
         expect(issue?.expected).toBe("number <= 150");
@@ -1090,10 +1117,14 @@ describe("Runtime validation tests", () => {
     });
 
     test("too_big error for string above maxLength", () => {
-      const result = validateUser({ id: 1, name: "a".repeat(101), email: "john@example.com" }); // name > 100
+      const result = validateUser({
+        id: 1,
+        name: "a".repeat(101),
+        email: "john@example.com",
+      }); // name > 100
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "too_big");
+        const issue = result.issues.find((i) => i.code === "too_big");
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["name"]);
         expect(issue?.expected).toBe("string with length <= 100");
@@ -1102,10 +1133,14 @@ describe("Runtime validation tests", () => {
     });
 
     test("invalid_string error for pattern mismatch", () => {
-      const result = validateUser({ id: 1, name: "John", email: "invalid-email" });
+      const result = validateUser({
+        id: 1,
+        name: "John",
+        email: "invalid-email",
+      });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "invalid_string");
+        const issue = result.issues.find((i) => i.code === "invalid_string");
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["email"]);
         expect(issue?.expected).toContain("pattern");
@@ -1114,10 +1149,15 @@ describe("Runtime validation tests", () => {
     });
 
     test("invalid_value error for invalid enum value", () => {
-      const result = validateUser({ id: 1, name: "John", email: "john@example.com", role: "superadmin" });
+      const result = validateUser({
+        id: 1,
+        name: "John",
+        email: "john@example.com",
+        role: "superadmin",
+      });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "invalid_value");
+        const issue = result.issues.find((i) => i.code === "invalid_value");
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["role"]);
         expect(issue?.expected).toBe('"admin" | "user" | "guest"');
@@ -1126,10 +1166,15 @@ describe("Runtime validation tests", () => {
     });
 
     test("not_integer error for non-integer number", () => {
-      const result = validateUser({ id: 1, name: "John", email: "john@example.com", age: 25.5 });
+      const result = validateUser({
+        id: 1,
+        name: "John",
+        email: "john@example.com",
+        age: 25.5,
+      });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "not_integer");
+        const issue = result.issues.find((i) => i.code === "not_integer");
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["age"]);
         expect(issue?.expected).toBe("integer");
@@ -1147,7 +1192,7 @@ describe("Runtime validation tests", () => {
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "not_unique");
+        const issue = result.issues.find((i) => i.code === "not_unique");
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["tags"]);
         expect(issue?.expected).toBe("array with unique items");
@@ -1156,10 +1201,15 @@ describe("Runtime validation tests", () => {
     });
 
     test("unrecognized_key error for additional properties", () => {
-      const result = validateUser({ id: 1, name: "John", email: "john@example.com", extra: "field" });
+      const result = validateUser({
+        id: 1,
+        name: "John",
+        email: "john@example.com",
+        extra: "field",
+      });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "unrecognized_key");
+        const issue = result.issues.find((i) => i.code === "unrecognized_key");
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["extra"]);
         expect(issue?.expected).toContain("known properties");
@@ -1179,7 +1229,7 @@ describe("Runtime validation tests", () => {
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "invalid_string");
+        const issue = result.issues.find((i) => i.code === "invalid_string");
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["address", "zipCode"]);
       }
@@ -1196,7 +1246,9 @@ describe("Runtime validation tests", () => {
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.code === "missing_key" && i.expected.includes("city"));
+        const issue = result.issues.find(
+          (i) => i.code === "missing_key" && i.expected.includes("city"),
+        );
         expect(issue).toBeDefined();
         expect(issue?.path).toEqual(["address"]);
       }
@@ -1211,7 +1263,7 @@ describe("Runtime validation tests", () => {
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.path.includes(1));
+        const issue = result.issues.find((i) => i.path.includes(1));
         expect(issue).toBeDefined();
         expect(issue?.code).toBe("invalid_type");
         expect(issue?.path).toEqual(["tags", 1]);
@@ -1229,7 +1281,9 @@ describe("Runtime validation tests", () => {
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.path.join(".") === "location" && i.code === "invalid_type");
+        const issue = result.issues.find(
+          (i) => i.path.join(".") === "location" && i.code === "invalid_type",
+        );
         expect(issue).toBeDefined();
         expect(issue?.expected).toBe("tuple with 2 elements");
         expect(issue?.received).toBe("array with 1 elements");
@@ -1245,7 +1299,9 @@ describe("Runtime validation tests", () => {
       });
       expect(result.success).toBe(false);
       if (!result.success) {
-        const issue = result.issues.find(i => i.path.join(".") === "location.0");
+        const issue = result.issues.find(
+          (i) => i.path.join(".") === "location.0",
+        );
         expect(issue).toBeDefined();
         expect(issue?.code).toBe("invalid_type");
         expect(issue?.path).toEqual(["location", 0]);
@@ -1266,7 +1322,7 @@ describe("Runtime validation tests", () => {
         // Should have multiple issues
         expect(result.issues.length).toBeGreaterThan(1);
 
-        const codes = result.issues.map(i => i.code);
+        const codes = result.issues.map((i) => i.code);
         expect(codes).toContain("invalid_type");
         expect(codes).toContain("too_small");
         expect(codes).toContain("invalid_string");

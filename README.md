@@ -5,7 +5,6 @@ A lightweight JSON Schema validator generator that creates minimal TypeScript co
 ## Features
 
 - 🚀 **Zero runtime dependencies** - Generated validators are standalone
-- 📦 **Minimal bundle size** - Optimized code generation for small output
 - 🔍 **Type-safe** - Full TypeScript support with generated type definitions
 - ⚡ **Fast validation** - No runtime schema parsing, direct code execution
 - 🌐 **Universal** - Works in Node.js and browsers
@@ -168,7 +167,7 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
 }
 
 // Throws an error if validation fails, returns the validated value otherwise
-export function parseUser(value: unknown): User {
+export function unsafeValidateUser(value: unknown): User {
     // ... validation logic
 }
 ```
@@ -176,7 +175,7 @@ export function parseUser(value: unknown): User {
 Usage:
 
 ```typescript
-import { validateUser, parseUser, type User } from './validator';
+import { validateUser, unsafeValidateUser, type User } from './validator';
 
 // Using validateUser - returns ValidationResult
 const result = validateUser(data);
@@ -187,9 +186,9 @@ if (result.success) {
     // Each issue contains: code, path, message, expected, received
 }
 
-// Using parseUser - throws on invalid input
+// Using unsafeValidateUser - throws on invalid input
 try {
-    const user = parseUser(data);
+    const user = unsafeValidateUser(data);
     console.log('Valid user:', user);
 } catch (error) {
     console.log('Validation failed:', error.message);
@@ -276,10 +275,10 @@ function validateAddress(value: unknown): ValidationResult<Address> { /* ... */ 
 
 // Exported validators for User and Post
 export function validateUser(value: unknown): ValidationResult<User> { /* ... */ }
-export function parseUser(value: unknown): User { /* ... */ }
+export function unsafeValidateUser(value: unknown): User { /* ... */ }
 
 export function validatePost(value: unknown): ValidationResult<Post> { /* ... */ }
-export function parsePost(value: unknown): Post { /* ... */ }
+export function unsafeValidatePost(value: unknown): Post { /* ... */ }
 ```
 
 ## Validation Result
