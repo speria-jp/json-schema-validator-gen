@@ -170,9 +170,17 @@ describe("Runtime validation tests", () => {
   );
 
   // Helper type for ValidationResult
+  type ValidationIssue = {
+    code: string;
+    path: (string | number)[];
+    message: string;
+    expected: string;
+    received: string;
+  };
+
   type ValidationResult<T> =
     | { success: true; data: T }
-    | { success: false; issues: unknown[] };
+    | { success: false; issues: ValidationIssue[] };
 
   describe("User validator", () => {
     let validateUser: (value: unknown) => ValidationResult<unknown>;
@@ -967,6 +975,303 @@ describe("Runtime validation tests", () => {
       expect(() => parseComment(invalidComment)).toThrow(
         "Validation failed for Comment:",
       );
+    });
+  });
+
+  describe("Error detail verification", () => {
+    let validateUser: (value: unknown) => ValidationResult<unknown>;
+    let validateComplex: (value: unknown) => ValidationResult<unknown>;
+    let validateRef: (value: unknown) => ValidationResult<unknown>;
+
+    test("setup", async () => {
+      const userValidator = await import(
+        join(generatedDir, "user-validator.ts")
+      );
+      validateUser = userValidator.validateUser;
+
+      const complexValidator = await import(
+        join(generatedDir, "complex-validator.ts")
+      );
+      validateComplex = complexValidator.validateComplex;
+
+      const refValidator = await import(join(generatedDir, "ref-validator.ts"));
+      validateRef = refValidator.validateRef;
+    });
+
+    test("invalid_type error for wrong type", () => {
+      const result = validateUser({ id: "not-a-number", name: "John", email: "john@example.com" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.path.join(".") === "id");
+        expect(issue).toBeDefined();
+        expect(issue?.code).toBe("invalid_type");
+        expect(issue?.path).toEqual(["id"]);
+        expect(issue?.expected).toBe("integer");
+        expect(issue?.received).toBe("string");
+      }
+    });
+
+    test("invalid_type error for non-object", () => {
+      const result = validateUser("not-an-object");
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.issues[0]?.code).toBe("invalid_type");
+        expect(result.issues[0]?.path).toEqual([]);
+        expect(result.issues[0]?.expected).toBe("object");
+        expect(result.issues[0]?.received).toBe("string");
+      }
+    });
+
+    test("invalid_type error for null", () => {
+      const result = validateUser(null);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.issues[0]?.code).toBe("invalid_type");
+        expect(result.issues[0]?.received).toBe("null");
+      }
+    });
+
+    test("invalid_type error for array instead of object", () => {
+      const result = validateUser([]);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.issues[0]?.code).toBe("invalid_type");
+        expect(result.issues[0]?.received).toBe("array");
+      }
+    });
+
+    test("missing_key error for required property", () => {
+      const result = validateUser({ id: 1, name: "John" }); // missing email
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "missing_key" && i.expected.includes("email"));
+        expect(issue).toBeDefined();
+        expect(issue?.code).toBe("missing_key");
+        expect(issue?.path).toEqual([]);
+        expect(issue?.expected).toBe('object with required property "email"');
+        expect(issue?.received).toBe('object without property "email"');
+      }
+    });
+
+    test("too_small error for number below minimum", () => {
+      const result = validateUser({ id: 0, name: "John", email: "john@example.com" }); // id < 1
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "too_small");
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["id"]);
+        expect(issue?.expected).toBe("number >= 1");
+        expect(issue?.received).toBe("0");
+      }
+    });
+
+    test("too_small error for string below minLength", () => {
+      const result = validateUser({ id: 1, name: "", email: "john@example.com" }); // empty name
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "too_small");
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["name"]);
+        expect(issue?.expected).toBe("string with length >= 1");
+        expect(issue?.received).toBe("string with length 0");
+      }
+    });
+
+    test("too_big error for number above maximum", () => {
+      const result = validateUser({ id: 1, name: "John", email: "john@example.com", age: 200 }); // age > 150
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "too_big");
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["age"]);
+        expect(issue?.expected).toBe("number <= 150");
+        expect(issue?.received).toBe("200");
+      }
+    });
+
+    test("too_big error for string above maxLength", () => {
+      const result = validateUser({ id: 1, name: "a".repeat(101), email: "john@example.com" }); // name > 100
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "too_big");
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["name"]);
+        expect(issue?.expected).toBe("string with length <= 100");
+        expect(issue?.received).toBe("string with length 101");
+      }
+    });
+
+    test("invalid_string error for pattern mismatch", () => {
+      const result = validateUser({ id: 1, name: "John", email: "invalid-email" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "invalid_string");
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["email"]);
+        expect(issue?.expected).toContain("pattern");
+        expect(issue?.received).toBe("invalid-email");
+      }
+    });
+
+    test("invalid_value error for invalid enum value", () => {
+      const result = validateUser({ id: 1, name: "John", email: "john@example.com", role: "superadmin" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "invalid_value");
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["role"]);
+        expect(issue?.expected).toBe('"admin" | "user" | "guest"');
+        expect(issue?.received).toBe('"superadmin"');
+      }
+    });
+
+    test("not_integer error for non-integer number", () => {
+      const result = validateUser({ id: 1, name: "John", email: "john@example.com", age: 25.5 });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "not_integer");
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["age"]);
+        expect(issue?.expected).toBe("integer");
+        expect(issue?.received).toBe("25.5");
+      }
+    });
+
+    test("not_unique error for array with duplicates", () => {
+      const result = validateComplex({
+        id: 1,
+        name: "Product",
+        price: 100,
+        tags: ["a", "b", "a"], // duplicate "a"
+        features: [{ name: "color", values: "red" }],
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "not_unique");
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["tags"]);
+        expect(issue?.expected).toBe("array with unique items");
+        expect(issue?.received).toBe("array with duplicate items");
+      }
+    });
+
+    test("unrecognized_key error for additional properties", () => {
+      const result = validateUser({ id: 1, name: "John", email: "john@example.com", extra: "field" });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "unrecognized_key");
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["extra"]);
+        expect(issue?.expected).toContain("known properties");
+        expect(issue?.received).toBe("extra");
+      }
+    });
+
+    test("nested path for nested object errors", () => {
+      const result = validateRef({
+        id: 1,
+        name: "John",
+        address: {
+          street: "123 Main St",
+          city: "New York",
+          zipCode: "123", // invalid pattern (should be 5 digits)
+        },
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "invalid_string");
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["address", "zipCode"]);
+      }
+    });
+
+    test("nested path for missing key in nested object", () => {
+      const result = validateRef({
+        id: 1,
+        name: "John",
+        address: {
+          street: "123 Main St",
+          // missing city
+        },
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.code === "missing_key" && i.expected.includes("city"));
+        expect(issue).toBeDefined();
+        expect(issue?.path).toEqual(["address"]);
+      }
+    });
+
+    test("array index in path for array item errors", () => {
+      const result = validateUser({
+        id: 1,
+        name: "John",
+        email: "john@example.com",
+        tags: ["valid", 123, "also-valid"], // invalid item at index 1
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.path.includes(1));
+        expect(issue).toBeDefined();
+        expect(issue?.code).toBe("invalid_type");
+        expect(issue?.path).toEqual(["tags", 1]);
+        expect(issue?.expected).toBe("string");
+        expect(issue?.received).toBe("number");
+      }
+    });
+
+    test("tuple length error", () => {
+      const result = validateUser({
+        id: 1,
+        name: "John",
+        email: "john@example.com",
+        location: [35.6762], // should be 2 elements
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.path.join(".") === "location" && i.code === "invalid_type");
+        expect(issue).toBeDefined();
+        expect(issue?.expected).toBe("tuple with 2 elements");
+        expect(issue?.received).toBe("array with 1 elements");
+      }
+    });
+
+    test("tuple element error with index path", () => {
+      const result = validateUser({
+        id: 1,
+        name: "John",
+        email: "john@example.com",
+        location: ["not-a-number", 139.6503],
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const issue = result.issues.find(i => i.path.join(".") === "location.0");
+        expect(issue).toBeDefined();
+        expect(issue?.code).toBe("invalid_type");
+        expect(issue?.path).toEqual(["location", 0]);
+        expect(issue?.expected).toBe("number");
+        expect(issue?.received).toBe("string");
+      }
+    });
+
+    test("collects multiple errors when abortEarly is false", () => {
+      const result = validateUser({
+        id: "not-a-number", // invalid_type
+        name: "", // too_small
+        email: "invalid-email", // invalid_string
+        extra: "field", // unrecognized_key
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        // Should have multiple issues
+        expect(result.issues.length).toBeGreaterThan(1);
+
+        const codes = result.issues.map(i => i.code);
+        expect(codes).toContain("invalid_type");
+        expect(codes).toContain("too_small");
+        expect(codes).toContain("invalid_string");
+        expect(codes).toContain("unrecognized_key");
+      }
     });
   });
 });
