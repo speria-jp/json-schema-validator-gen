@@ -1,6 +1,6 @@
 {
   "name": "@speria-jp/json-schema-validator-gen",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A lightweight JSON Schema validator generator that creates minimal TypeScript code and type definitions",
   "homepage": "https://github.com/speria-jp/json-schema-validator-gen",
   "repository": {
