@@ -123,13 +123,13 @@ export function validateRef(value: unknown, options?: ValidationOptions): Valida
         }
         if ("id" in value) {
             if (!(typeof value.id === "number")) {
-                _invalidType(issues, [...[], "id"], "integer", value.id);
+                _invalidType(issues, ["id"], "integer", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!Number.isInteger(value.id)) {
-                    _notInteger(issues, [...[], "id"], value.id);
+                    _notInteger(issues, ["id"], value.id);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -137,7 +137,7 @@ export function validateRef(value: unknown, options?: ValidationOptions): Valida
         }
         if ("name" in value) {
             if (!(typeof value.name === "string")) {
-                _invalidType(issues, [...[], "name"], "string", value.name);
+                _invalidType(issues, ["name"], "string", value.name);
                 if (abortEarly)
                     return { success: false, issues };
             }
@@ -146,7 +146,7 @@ export function validateRef(value: unknown, options?: ValidationOptions): Valida
             const _refResult1 = validateAddress(value.address);
             if (!_refResult1.success) {
                 for (const _issue2 of _refResult1.issues) {
-                    issues.push({ ..._issue2, path: [...[...[], "address"], ..._issue2.path] });
+                    issues.push({ ..._issue2, path: [...["address"], ..._issue2.path] });
                 }
                 if (abortEarly)
                     return { success: false, issues };
@@ -156,7 +156,7 @@ export function validateRef(value: unknown, options?: ValidationOptions): Valida
             const _refResult3 = validateAddress(value.workAddress);
             if (!_refResult3.success) {
                 for (const _issue4 of _refResult3.issues) {
-                    issues.push({ ..._issue4, path: [...[...[], "workAddress"], ..._issue4.path] });
+                    issues.push({ ..._issue4, path: [...["workAddress"], ..._issue4.path] });
                 }
                 if (abortEarly)
                     return { success: false, issues };
@@ -198,27 +198,27 @@ function validateAddress(value: unknown, options?: ValidationOptions): Validatio
         }
         if ("street" in value) {
             if (!(typeof value.street === "string")) {
-                _invalidType(issues, [...[], "street"], "string", value.street);
+                _invalidType(issues, ["street"], "string", value.street);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("city" in value) {
             if (!(typeof value.city === "string")) {
-                _invalidType(issues, [...[], "city"], "string", value.city);
+                _invalidType(issues, ["city"], "string", value.city);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("zipCode" in value) {
             if (!(typeof value.zipCode === "string")) {
-                _invalidType(issues, [...[], "zipCode"], "string", value.zipCode);
+                _invalidType(issues, ["zipCode"], "string", value.zipCode);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!/^\d{5}$/.test(value.zipCode)) {
-                    _invalidString(issues, [...[], "zipCode"], "string matching pattern /^\\d{5}$/", value.zipCode);
+                    _invalidString(issues, ["zipCode"], "string matching pattern /^\\d{5}$/", value.zipCode);
                     if (abortEarly)
                         return { success: false, issues };
                 }

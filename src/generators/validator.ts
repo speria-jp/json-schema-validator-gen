@@ -1083,10 +1083,10 @@ function generateTupleChecks(
         valueExpr,
         factory.createNumericLiteral(index),
       );
-      const elementPath = factory.createArrayLiteralExpression([
-        factory.createSpreadElement(pathExpr),
+      const elementPath = createPathWithElement(
+        pathExpr,
         factory.createNumericLiteral(index),
-      ]);
+      );
       generateChecks(
         itemNode,
         elementAccess,
@@ -1108,10 +1108,7 @@ function generateTupleChecks(
         valueExpr,
         indexVar,
       );
-      const elementPath = factory.createArrayLiteralExpression([
-        factory.createSpreadElement(pathExpr),
-        indexVar,
-      ]);
+      const elementPath = createPathWithElement(pathExpr, indexVar);
 
       generateChecks(
         node.items,
@@ -1180,10 +1177,10 @@ function generateTupleChecks(
         valueExpr,
         factory.createNumericLiteral(index),
       );
-      const elementPath = factory.createArrayLiteralExpression([
-        factory.createSpreadElement(pathExpr),
+      const elementPath = createPathWithElement(
+        pathExpr,
         factory.createNumericLiteral(index),
-      ]);
+      );
       const itemNode = node.compileSchema(itemSchema);
       generateChecks(
         itemNode,
@@ -1220,10 +1217,7 @@ function generateRegularArrayChecks(
       valueExpr,
       indexVar,
     );
-    const elementPath = factory.createArrayLiteralExpression([
-      factory.createSpreadElement(pathExpr),
-      indexVar,
-    ]);
+    const elementPath = createPathWithElement(pathExpr, indexVar);
 
     generateChecks(
       node.items,
@@ -1419,10 +1413,10 @@ function generateObjectChecks(
             factory.createStringLiteral(prop),
           );
 
-      const propPath = factory.createArrayLiteralExpression([
-        factory.createSpreadElement(pathExpr),
+      const propPath = createPathWithElement(
+        pathExpr,
         factory.createStringLiteral(prop),
-      ]);
+      );
 
       const propStatements: ts.Statement[] = [];
       generateChecks(
@@ -1490,10 +1484,7 @@ function generateObjectChecks(
                   [keyVar],
                 ),
               ),
-              factory.createArrayLiteralExpression([
-                factory.createSpreadElement(pathExpr),
-                keyVar,
-              ]),
+              createPathWithElement(pathExpr, keyVar),
               factory.createTemplateExpression(
                 factory.createTemplateHead("one of known properties ("),
                 [
@@ -2323,6 +2314,28 @@ function normalizeType(type?: string | string[]): string {
     return type.length === 1 ? normalizeType(type[0]) : "union";
   }
   return type;
+}
+
+/**
+ * Create a path expression by adding an element to the parent path.
+ * Optimizes by avoiding spread when parent is an array literal.
+ */
+function createPathWithElement(
+  parentPath: ts.Expression,
+  element: ts.Expression,
+): ts.Expression {
+  if (ts.isArrayLiteralExpression(parentPath)) {
+    // Parent is array literal - add element directly
+    return factory.createArrayLiteralExpression([
+      ...parentPath.elements,
+      element,
+    ]);
+  }
+  // Parent is a variable reference - need spread
+  return factory.createArrayLiteralExpression([
+    factory.createSpreadElement(parentPath),
+    element,
+  ]);
 }
 
 function generateUniqueVarName(

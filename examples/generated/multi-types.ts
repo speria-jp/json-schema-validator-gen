@@ -134,20 +134,20 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("id" in value) {
             if (!(typeof value.id === "string")) {
-                _invalidType(issues, [...[], "id"], "string", value.id);
+                _invalidType(issues, ["id"], "string", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("name" in value) {
             if (!(typeof value.name === "string")) {
-                _invalidType(issues, [...[], "name"], "string", value.name);
+                _invalidType(issues, ["name"], "string", value.name);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.name.length < 1) {
-                    _tooSmall(issues, [...[], "name"], "string with length >= 1", `string with length ${value.name.length}`);
+                    _tooSmall(issues, ["name"], "string with length >= 1", `string with length ${value.name.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -155,13 +155,13 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("email" in value) {
             if (!(typeof value.email === "string")) {
-                _invalidType(issues, [...[], "email"], "string", value.email);
+                _invalidType(issues, ["email"], "string", value.email);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!/^[\w.-]+@[\w.-]+\.[a-z]{2,}$/.test(value.email)) {
-                    _invalidString(issues, [...[], "email"], "string matching pattern /^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/", value.email);
+                    _invalidString(issues, ["email"], "string matching pattern /^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/", value.email);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -169,7 +169,7 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         for (const key1 in value) {
             if (!["id", "name", "email"].includes(key1)) {
-                _unrecognizedKey(issues, [...[], key1], `one of known properties (${["id", "name", "email"].join(", ")})`, key1);
+                _unrecognizedKey(issues, [key1], `one of known properties (${["id", "name", "email"].join(", ")})`, key1);
                 if (abortEarly)
                     return { success: false, issues };
             }
@@ -220,25 +220,25 @@ export function validatePost(value: unknown, options?: ValidationOptions): Valid
         }
         if ("id" in value) {
             if (!(typeof value.id === "string")) {
-                _invalidType(issues, [...[], "id"], "string", value.id);
+                _invalidType(issues, ["id"], "string", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("title" in value) {
             if (!(typeof value.title === "string")) {
-                _invalidType(issues, [...[], "title"], "string", value.title);
+                _invalidType(issues, ["title"], "string", value.title);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.title.length < 1) {
-                    _tooSmall(issues, [...[], "title"], "string with length >= 1", `string with length ${value.title.length}`);
+                    _tooSmall(issues, ["title"], "string with length >= 1", `string with length ${value.title.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.title.length > 200) {
-                    _tooBig(issues, [...[], "title"], "string with length <= 200", `string with length ${value.title.length}`);
+                    _tooBig(issues, ["title"], "string with length <= 200", `string with length ${value.title.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -246,28 +246,28 @@ export function validatePost(value: unknown, options?: ValidationOptions): Valid
         }
         if ("content" in value) {
             if (!(typeof value.content === "string")) {
-                _invalidType(issues, [...[], "content"], "string", value.content);
+                _invalidType(issues, ["content"], "string", value.content);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("authorId" in value) {
             if (!(typeof value.authorId === "string")) {
-                _invalidType(issues, [...[], "authorId"], "string", value.authorId);
+                _invalidType(issues, ["authorId"], "string", value.authorId);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("tags" in value) {
             if (!Array.isArray(value.tags)) {
-                _invalidType(issues, [...[], "tags"], "array", value.tags);
+                _invalidType(issues, ["tags"], "array", value.tags);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 for (let i1 = 0; i1 < value.tags.length; i1++) {
                     if (!(typeof value.tags[i1] === "string")) {
-                        _invalidType(issues, [...[...[], "tags"], i1], "string", value.tags[i1]);
+                        _invalidType(issues, ["tags", i1], "string", value.tags[i1]);
                         if (abortEarly)
                             return { success: false, issues };
                     }
@@ -276,14 +276,14 @@ export function validatePost(value: unknown, options?: ValidationOptions): Valid
         }
         if ("published" in value) {
             if (typeof value.published !== "boolean") {
-                _invalidType(issues, [...[], "published"], "boolean", value.published);
+                _invalidType(issues, ["published"], "boolean", value.published);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         for (const key2 in value) {
             if (!["id", "title", "content", "authorId", "tags", "published"].includes(key2)) {
-                _unrecognizedKey(issues, [...[], key2], `one of known properties (${["id", "title", "content", "authorId", "tags", "published"].join(", ")})`, key2);
+                _unrecognizedKey(issues, [key2], `one of known properties (${["id", "title", "content", "authorId", "tags", "published"].join(", ")})`, key2);
                 if (abortEarly)
                     return { success: false, issues };
             }
@@ -339,39 +339,39 @@ export function validateComment(value: unknown, options?: ValidationOptions): Va
         }
         if ("id" in value) {
             if (!(typeof value.id === "string")) {
-                _invalidType(issues, [...[], "id"], "string", value.id);
+                _invalidType(issues, ["id"], "string", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("postId" in value) {
             if (!(typeof value.postId === "string")) {
-                _invalidType(issues, [...[], "postId"], "string", value.postId);
+                _invalidType(issues, ["postId"], "string", value.postId);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("authorId" in value) {
             if (!(typeof value.authorId === "string")) {
-                _invalidType(issues, [...[], "authorId"], "string", value.authorId);
+                _invalidType(issues, ["authorId"], "string", value.authorId);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("text" in value) {
             if (!(typeof value.text === "string")) {
-                _invalidType(issues, [...[], "text"], "string", value.text);
+                _invalidType(issues, ["text"], "string", value.text);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.text.length < 1) {
-                    _tooSmall(issues, [...[], "text"], "string with length >= 1", `string with length ${value.text.length}`);
+                    _tooSmall(issues, ["text"], "string with length >= 1", `string with length ${value.text.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.text.length > 1000) {
-                    _tooBig(issues, [...[], "text"], "string with length <= 1000", `string with length ${value.text.length}`);
+                    _tooBig(issues, ["text"], "string with length <= 1000", `string with length ${value.text.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -379,14 +379,14 @@ export function validateComment(value: unknown, options?: ValidationOptions): Va
         }
         if ("createdAt" in value) {
             if (!(typeof value.createdAt === "string")) {
-                _invalidType(issues, [...[], "createdAt"], "string", value.createdAt);
+                _invalidType(issues, ["createdAt"], "string", value.createdAt);
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         for (const key1 in value) {
             if (!["id", "postId", "authorId", "text", "createdAt"].includes(key1)) {
-                _unrecognizedKey(issues, [...[], key1], `one of known properties (${["id", "postId", "authorId", "text", "createdAt"].join(", ")})`, key1);
+                _unrecognizedKey(issues, [key1], `one of known properties (${["id", "postId", "authorId", "text", "createdAt"].join(", ")})`, key1);
                 if (abortEarly)
                     return { success: false, issues };
             }

@@ -122,18 +122,18 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("id" in value) {
             if (!(typeof value.id === "number")) {
-                _invalidType(issues, [...[], "id"], "integer", value.id);
+                _invalidType(issues, ["id"], "integer", value.id);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!Number.isInteger(value.id)) {
-                    _notInteger(issues, [...[], "id"], value.id);
+                    _notInteger(issues, ["id"], value.id);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.id < 1) {
-                    _tooSmall(issues, [...[], "id"], "number >= 1", String(value.id));
+                    _tooSmall(issues, ["id"], "number >= 1", String(value.id));
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -141,18 +141,18 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("name" in value) {
             if (!(typeof value.name === "string")) {
-                _invalidType(issues, [...[], "name"], "string", value.name);
+                _invalidType(issues, ["name"], "string", value.name);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.name.length < 1) {
-                    _tooSmall(issues, [...[], "name"], "string with length >= 1", `string with length ${value.name.length}`);
+                    _tooSmall(issues, ["name"], "string with length >= 1", `string with length ${value.name.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.name.length > 100) {
-                    _tooBig(issues, [...[], "name"], "string with length <= 100", `string with length ${value.name.length}`);
+                    _tooBig(issues, ["name"], "string with length <= 100", `string with length ${value.name.length}`);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -160,13 +160,13 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("email" in value) {
             if (!(typeof value.email === "string")) {
-                _invalidType(issues, [...[], "email"], "string", value.email);
+                _invalidType(issues, ["email"], "string", value.email);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!/^[\w.-]+@[\w.-]+\.[a-z]{2,}$/.test(value.email)) {
-                    _invalidString(issues, [...[], "email"], "string matching pattern /^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/", value.email);
+                    _invalidString(issues, ["email"], "string matching pattern /^[\\w.-]+@[\\w.-]+\\.[a-z]{2,}$/", value.email);
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -174,23 +174,23 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("age" in value) {
             if (!(typeof value.age === "number")) {
-                _invalidType(issues, [...[], "age"], "integer", value.age);
+                _invalidType(issues, ["age"], "integer", value.age);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (!Number.isInteger(value.age)) {
-                    _notInteger(issues, [...[], "age"], value.age);
+                    _notInteger(issues, ["age"], value.age);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.age < 0) {
-                    _tooSmall(issues, [...[], "age"], "number >= 0", String(value.age));
+                    _tooSmall(issues, ["age"], "number >= 0", String(value.age));
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (value.age > 150) {
-                    _tooBig(issues, [...[], "age"], "number <= 150", String(value.age));
+                    _tooBig(issues, ["age"], "number <= 150", String(value.age));
                     if (abortEarly)
                         return { success: false, issues };
                 }
@@ -198,14 +198,14 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("tags" in value) {
             if (!Array.isArray(value.tags)) {
-                _invalidType(issues, [...[], "tags"], "array", value.tags);
+                _invalidType(issues, ["tags"], "array", value.tags);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 for (let i1 = 0; i1 < value.tags.length; i1++) {
                     if (!(typeof value.tags[i1] === "string")) {
-                        _invalidType(issues, [...[...[], "tags"], i1], "string", value.tags[i1]);
+                        _invalidType(issues, ["tags", i1], "string", value.tags[i1]);
                         if (abortEarly)
                             return { success: false, issues };
                     }
@@ -214,53 +214,53 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         if ("role" in value) {
             if (!(["admin", "user", "guest"] as unknown[]).includes(value.role)) {
-                _invalidValue(issues, [...[], "role"], "\"admin\" | \"user\" | \"guest\"", JSON.stringify(value.role));
+                _invalidValue(issues, ["role"], "\"admin\" | \"user\" | \"guest\"", JSON.stringify(value.role));
                 if (abortEarly)
                     return { success: false, issues };
             }
         }
         if ("location" in value) {
             if (!Array.isArray(value.location)) {
-                _invalidType(issues, [...[], "location"], "array", value.location);
+                _invalidType(issues, ["location"], "array", value.location);
                 if (abortEarly)
                     return { success: false, issues };
             }
             else {
                 if (value.location.length !== 2) {
-                    issues.push({ code: "invalid_type", path: [...[], "location"], message: `Expected ${"tuple with 2 elements"}, received ${`array with ${value.location.length} elements`}`, expected: "tuple with 2 elements", received: `array with ${value.location.length} elements` });
+                    issues.push({ code: "invalid_type", path: ["location"], message: `Expected ${"tuple with 2 elements"}, received ${`array with ${value.location.length} elements`}`, expected: "tuple with 2 elements", received: `array with ${value.location.length} elements` });
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 if (!(typeof value.location[0] === "number")) {
-                    _invalidType(issues, [...[...[], "location"], 0], "number", value.location[0]);
+                    _invalidType(issues, ["location", 0], "number", value.location[0]);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 else {
                     if (value.location[0] < -90) {
-                        _tooSmall(issues, [...[...[], "location"], 0], "number >= -90", String(value.location[0]));
+                        _tooSmall(issues, ["location", 0], "number >= -90", String(value.location[0]));
                         if (abortEarly)
                             return { success: false, issues };
                     }
                     if (value.location[0] > 90) {
-                        _tooBig(issues, [...[...[], "location"], 0], "number <= 90", String(value.location[0]));
+                        _tooBig(issues, ["location", 0], "number <= 90", String(value.location[0]));
                         if (abortEarly)
                             return { success: false, issues };
                     }
                 }
                 if (!(typeof value.location[1] === "number")) {
-                    _invalidType(issues, [...[...[], "location"], 1], "number", value.location[1]);
+                    _invalidType(issues, ["location", 1], "number", value.location[1]);
                     if (abortEarly)
                         return { success: false, issues };
                 }
                 else {
                     if (value.location[1] < -180) {
-                        _tooSmall(issues, [...[...[], "location"], 1], "number >= -180", String(value.location[1]));
+                        _tooSmall(issues, ["location", 1], "number >= -180", String(value.location[1]));
                         if (abortEarly)
                             return { success: false, issues };
                     }
                     if (value.location[1] > 180) {
-                        _tooBig(issues, [...[...[], "location"], 1], "number <= 180", String(value.location[1]));
+                        _tooBig(issues, ["location", 1], "number <= 180", String(value.location[1]));
                         if (abortEarly)
                             return { success: false, issues };
                     }
@@ -269,7 +269,7 @@ export function validateUser(value: unknown, options?: ValidationOptions): Valid
         }
         for (const key2 in value) {
             if (!["id", "name", "email", "age", "tags", "role", "location"].includes(key2)) {
-                _unrecognizedKey(issues, [...[], key2], `one of known properties (${["id", "name", "email", "age", "tags", "role", "location"].join(", ")})`, key2);
+                _unrecognizedKey(issues, [key2], `one of known properties (${["id", "name", "email", "age", "tags", "role", "location"].join(", ")})`, key2);
                 if (abortEarly)
                     return { success: false, issues };
             }
