@@ -9,6 +9,7 @@ A lightweight JSON Schema validator generator that creates minimal TypeScript co
 - 🔍 **Type-safe** - Full TypeScript support with generated type definitions
 - ⚡ **Fast validation** - No runtime schema parsing, direct code execution
 - 🌐 **Universal** - Works in Node.js and browsers
+- 📋 **Detailed errors** - Rich error information with path, expected/received values
 
 ## Installation
 
@@ -161,30 +162,41 @@ export type User = {
     role?: "admin" | "user" | "guest";
 };
 
-export function validateUser(value: unknown): value is User {
-    if (typeof value !== "object" || value === null || Array.isArray(value))
-        return false;
-    if (!("id" in value && "name" in value && "email" in value))
-        return false;
-    if (typeof value.id !== "number")
-        return false;
-    if (!Number.isInteger(value.id))
-        return false;
-    if (value.id < 1)
-        return false;
-    if (typeof value.name !== "string")
-        return false;
-    if (value.name.length < 1)
-        return false;
-    if (value.name.length > 100)
-        return false;
-    if (typeof value.email !== "string")
-        return false;
-    if (!/^[\w.-]+@[\w.-]+\.[a-z]{2,}$/.test(value.email))
-        return false;
-    // ... additional validations for optional properties
-    return true;
+// Returns ValidationResult with detailed error information
+export function validateUser(value: unknown, options?: ValidationOptions): ValidationResult<User> {
+    // ... validation logic
 }
+
+// Throws an error if validation fails, returns the validated value otherwise
+export function parseUser(value: unknown): User {
+    // ... validation logic
+}
+```
+
+Usage:
+
+```typescript
+import { validateUser, parseUser, type User } from './validator';
+
+// Using validateUser - returns ValidationResult
+const result = validateUser(data);
+if (result.success) {
+    console.log('Valid user:', result.data);
+} else {
+    console.log('Validation errors:', result.issues);
+    // Each issue contains: code, path, message, expected, received
+}
+
+// Using parseUser - throws on invalid input
+try {
+    const user = parseUser(data);
+    console.log('Valid user:', user);
+} catch (error) {
+    console.log('Validation failed:', error.message);
+}
+
+// Abort early option - stop on first error
+const result = validateUser(data, { abortEarly: true });
 ```
 
 ### Multiple Types Example
@@ -260,15 +272,47 @@ export type Post = {
 };
 
 // Dependency validator (not exported)
-function validateAddress(value: unknown): value is Address { /* ... */ }
+function validateAddress(value: unknown): ValidationResult<Address> { /* ... */ }
 
 // Exported validators for User and Post
-export function validateUser(value: unknown): value is User { /* ... */ }
-export function unsafeValidateUser(value: unknown): User { /* ... */ }
+export function validateUser(value: unknown): ValidationResult<User> { /* ... */ }
+export function parseUser(value: unknown): User { /* ... */ }
 
-export function validatePost(value: unknown): value is Post { /* ... */ }
-export function unsafeValidatePost(value: unknown): Post { /* ... */ }
+export function validatePost(value: unknown): ValidationResult<Post> { /* ... */ }
+export function parsePost(value: unknown): Post { /* ... */ }
 ```
+
+## Validation Result
+
+Generated validators return a `ValidationResult<T>` discriminated union:
+
+```typescript
+type ValidationResult<T> =
+  | { success: true; data: T }
+  | { success: false; issues: ValidationIssue[] };
+
+interface ValidationIssue {
+  code: ValidationIssueCode;
+  path: (string | number)[];  // e.g., ["address", "zipCode"] or ["items", 0]
+  message: string;
+  expected: string;
+  received: string;
+}
+```
+
+### Error Codes
+
+| Code | Description | Example |
+|------|-------------|---------|
+| `invalid_type` | Value has wrong type | Expected `string`, received `number` |
+| `missing_key` | Required property is missing | Missing `email` property |
+| `too_small` | Value below minimum | Number < minimum, string length < minLength |
+| `too_big` | Value above maximum | Number > maximum, string length > maxLength |
+| `invalid_string` | String doesn't match pattern | Email pattern mismatch |
+| `invalid_value` | Value not in allowed set | Enum value not in list |
+| `not_integer` | Number is not an integer | `25.5` instead of `25` |
+| `not_unique` | Array has duplicate items | `["a", "a"]` with `uniqueItems: true` |
+| `unrecognized_key` | Unknown property | Extra property with `additionalProperties: false` |
 
 ## Supported JSON Schema Features
 
