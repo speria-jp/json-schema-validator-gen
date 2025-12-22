@@ -56,7 +56,8 @@ This is a JSON Schema validator generator that creates TypeScript type definitio
 - **Zero Runtime Dependencies**: Generated validators are standalone
 - **TypeScript Compiler API**: Uses `ts.factory` for AST-based code generation instead of string templates
 - **Schema Compilation**: Leverages `json-schema-library` for schema parsing and validation
-- **Type Safety**: Generated validators use TypeScript type predicates (`value is Type`)
+- **ValidationResult API**: Validators return `ValidationResult<T>` with detailed error information (code, path, expected, received)
+- **Type Narrowing over Type Casting**: Generated code uses TypeScript's `in` operator for type narrowing instead of `as` casts (see Validator Code Generation Guidelines below)
 
 ### Testing Strategy
 
@@ -92,3 +93,32 @@ When creating commits in this repository:
    - Use present tense ("add feature" not "added feature")
    - Keep the subject line under 50 characters
    - Use the imperative mood ("fix bug" not "fixes bug")
+
+## Validator Code Generation Guidelines
+
+When modifying `src/generators/validator.ts`, follow these principles:
+
+### Type Safety: Use Type Narrowing, Not Type Casting
+
+Generated validator code must use TypeScript's type narrowing instead of `as` casts.
+
+```typescript
+// ❌ BAD: Type casting bypasses type checking
+const obj = value as Record<string, unknown>;
+if (typeof obj.id !== "number") { ... }
+
+// ✅ GOOD: Type narrowing with 'in' operator
+if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    // handle invalid type
+}
+if ("id" in value) {
+    // value is narrowed to { id: unknown }
+    if (typeof value.id !== "number") {
+        // handle invalid type
+    }
+}
+```
+
+**Why avoid `as` casts?**
+- Casts bypass TypeScript's type checking and can hide bugs
+- Type narrowing provides compile-time safety
