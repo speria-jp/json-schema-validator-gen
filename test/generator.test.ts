@@ -42,9 +42,9 @@ describe("generate", () => {
     expect(result.typeDefinition).toContain("name: string;");
     expect(result.typeDefinition).toContain("age?: number;");
     expect(result.validatorCode).toContain(
-      "function validatePerson(value: unknown): value is Person",
+      "function validatePerson(value: unknown, options?: ValidationOptions): ValidationResult<Person>",
     );
-    expect(result.validatorCode).toContain('"name" in value');
+    expect(result.validatorCode).toMatch(/"name" in value/);
   });
 
   test("should generate validator with constraints", async () => {
@@ -100,7 +100,7 @@ describe("generate", () => {
       '"active" | "inactive" | "pending"',
     );
     expect(result.validatorCode).toContain(
-      '["active", "inactive", "pending"].includes',
+      '(["active", "inactive", "pending"] as unknown[]).includes',
     );
   });
 
@@ -404,11 +404,11 @@ describe("generate", () => {
     expect(result.typeDefinition).toContain(
       "value: string | number | boolean;",
     );
-    expect(result.validatorCode).toContain('"value" in value');
+    expect(result.validatorCode).toMatch(/"value" in value/);
     // Check that oneOf validation is generated
-    expect(result.validatorCode).toContain('typeof value.value !== "string"');
-    expect(result.validatorCode).toContain('typeof value.value !== "number"');
-    expect(result.validatorCode).toContain('typeof value.value !== "boolean"');
+    expect(result.validatorCode).toMatch(/typeof value\.value === "string"/);
+    expect(result.validatorCode).toMatch(/typeof value\.value === "number"/);
+    expect(result.validatorCode).toMatch(/typeof value\.value !== "boolean"/);
   });
 
   test("should handle anyOf union types", async () => {
@@ -438,12 +438,12 @@ describe("generate", () => {
     const result = results[0];
 
     expect(result.typeDefinition).toContain("data: string | number;");
-    expect(result.validatorCode).toContain('"data" in value');
+    expect(result.validatorCode).toMatch(/"data" in value/);
     // Check that anyOf validation is generated
-    expect(result.validatorCode).toContain('typeof value.data !== "string"');
-    expect(result.validatorCode).toContain("value.data.length < 5");
-    expect(result.validatorCode).toContain('typeof value.data !== "number"');
-    expect(result.validatorCode).toContain("value.data < 100");
+    expect(result.validatorCode).toMatch(/typeof value\.data === "string"/);
+    expect(result.validatorCode).toMatch(/value\.data\.length < 5/);
+    expect(result.validatorCode).toMatch(/typeof value\.data === "number"/);
+    expect(result.validatorCode).toMatch(/value\.data < 100/);
   });
 
   test("should handle const values", async () => {
@@ -528,7 +528,7 @@ describe("generate", () => {
 
     expect(result.typeDefinition).toContain("active: boolean;");
     expect(result.typeDefinition).toContain("enabled?: boolean;");
-    expect(result.validatorCode).toContain('typeof value.active !== "boolean"');
+    expect(result.validatorCode).toMatch(/typeof value\.active !== "boolean"/);
   });
 
   test("should handle Draft-06 const keyword", async () => {
@@ -709,7 +709,7 @@ describe("generate", () => {
       expect(result.validatorCode).toContain(
         `function validate${testCase.typeName}`,
       );
-      expect(result.validatorCode).toContain('typeof value !== "string"');
+      expect(result.validatorCode).toContain('typeof value === "string"');
     }
   });
 
@@ -769,7 +769,7 @@ describe("generate", () => {
 
     // Verify that unsupported features don't cause errors and basic functionality works
     expect(result.typeDefinition).toContain("data?: string;");
-    expect(result.validatorCode).toContain('typeof value.data !== "string"');
+    expect(result.validatorCode).toMatch(/typeof value\.data === "string"/);
     expect(result.validatorCode).toBeDefined();
   });
 
@@ -830,7 +830,7 @@ describe("generate", () => {
 
     expect(result.typeDefinition).toContain("name: string;");
     expect(result.typeDefinition).toContain('version?: "2.0";');
-    expect(result.validatorCode).toContain('"name" in value');
+    expect(result.validatorCode).toMatch(/"name" in value/);
     expect(result.validatorCode).toContain('!== "2.0"');
   });
 
@@ -1053,9 +1053,9 @@ describe("generate", () => {
 
     // Check that patterns are properly escaped in generated code
     expect(result.validatorCode).toContain("\\/"); // Escaped forward slash
-    expect(result.validatorCode).toContain("test(value.url)");
-    expect(result.validatorCode).toContain("test(value.path)");
-    expect(result.validatorCode).toContain("test(value.date)");
+    expect(result.validatorCode).toMatch(/\.test\(value\.url\)/);
+    expect(result.validatorCode).toMatch(/\.test\(value\.path\)/);
+    expect(result.validatorCode).toMatch(/\.test\(value\.date\)/);
   });
 
   test("should skip invalid regex patterns", async () => {
@@ -1090,10 +1090,10 @@ describe("generate", () => {
     const result = results[0];
 
     // Valid pattern should be included
-    expect(result.validatorCode).toContain("test(value.valid)");
+    expect(result.validatorCode).toMatch(/\.test\(value\.valid\)/);
 
     // Invalid pattern should be skipped
-    expect(result.validatorCode).not.toContain("test(value.invalid)");
+    expect(result.validatorCode).not.toMatch(/\.test\(value\.invalid\)/);
 
     // Warning should be logged
     expect(warnings.some((w) => w.includes("Invalid regex pattern"))).toBe(
@@ -1182,10 +1182,10 @@ describe("generate", () => {
     expect(result.typeDefinition).toContain("export type EmptyObject = {");
     expect(result.typeDefinition).toContain("};");
     expect(result.validatorCode).toContain(
-      "function validateEmptyObject(value: unknown): value is EmptyObject",
+      "function validateEmptyObject(value: unknown, options?: ValidationOptions): ValidationResult<EmptyObject>",
     );
-    expect(result.validatorCode).toContain('typeof value !== "object"');
-    expect(result.validatorCode).toContain("value === null");
+    expect(result.validatorCode).toContain('typeof value === "object"');
+    expect(result.validatorCode).toContain("value !== null");
   });
 
   test("should handle object with empty properties and additionalProperties false", async () => {
@@ -1213,11 +1213,13 @@ describe("generate", () => {
     );
     expect(result.typeDefinition).toContain("};");
     expect(result.validatorCode).toContain(
-      "function validateStrictEmptyObject(value: unknown): value is StrictEmptyObject",
+      "function validateStrictEmptyObject(value: unknown, options?: ValidationOptions): ValidationResult<StrictEmptyObject>",
     );
     // Should check that no additional properties are present
-    expect(result.validatorCode).toContain("for (const key1 in value)");
-    expect(result.validatorCode).toContain("([] as string[]).includes(key1)");
+    expect(result.validatorCode).toMatch(/for \(const key\d+ in value\)/);
+    expect(result.validatorCode).toMatch(
+      /\(\[\] as string\[\]\)\.includes\(key\d+\)/,
+    );
   });
 
   // Step 3: Tests for targets option

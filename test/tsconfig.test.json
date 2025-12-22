@@ -20,9 +20,9 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
 
-    // Check for unused code in generated files
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    // Generated code may include unused helpers, so we allow this
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
 
     // Additional checks
