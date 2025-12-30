@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "Container": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "anyOf": [
+              { "$ref": "#/$defs/TextItem" },
+              { "$ref": "#/$defs/ImageItem" },
+              { "$ref": "#/$defs/LinkItem" }
+            ]
+          }
+        }
+      },
+      "required": ["id", "items"],
+      "additionalProperties": false
+    },
+    "TextItem": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "text"
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["type", "content"],
+      "additionalProperties": false
+    },
+    "ImageItem": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "image"
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^https?://"
+        },
+        "alt": {
+          "type": "string"
+        }
+      },
+      "required": ["type", "url"],
+      "additionalProperties": false
+    },
+    "LinkItem": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "link"
+        },
+        "href": {
+          "type": "string",
+          "pattern": "^https?://"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["type", "href", "label"],
+      "additionalProperties": false
+    },
+    "NestedAnyOf": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "kind": { "type": "string", "const": "simple" },
+                "data": { "type": "string" }
+              },
+              "required": ["kind", "data"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "kind": { "type": "string", "const": "complex" },
+                "nested": { "$ref": "#/$defs/TextItem" }
+              },
+              "required": ["kind", "nested"],
+              "additionalProperties": false
+            }
+          ]
+        }
+      },
+      "required": ["value"],
+      "additionalProperties": false
+    }
+  }
+}
