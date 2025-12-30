@@ -46,6 +46,15 @@ describe("Generated code snapshots", () => {
     },
   );
 
+  // Generate anyof-ref-validator (anyOf with $ref - regression test)
+  execSync(
+    `bun run ${cliPath} -s ${join(examplesDir, "anyof-ref-schema.json")} -o ${join(generatedDir, "anyof-ref-validator.ts")} -t '#/$defs/Container' -t '#/$defs/NestedAnyOf'`,
+    {
+      stdio: "pipe",
+      cwd: join(__dirname, ".."),
+    },
+  );
+
   test("user-validator.ts snapshot", async () => {
     const content = await readFile(
       join(generatedDir, "user-validator.ts"),
@@ -73,6 +82,14 @@ describe("Generated code snapshots", () => {
   test("multi-types.ts snapshot", async () => {
     const content = await readFile(
       join(generatedDir, "multi-types.ts"),
+      "utf-8",
+    );
+    expect(content).toMatchSnapshot();
+  });
+
+  test("anyof-ref-validator.ts snapshot", async () => {
+    const content = await readFile(
+      join(generatedDir, "anyof-ref-validator.ts"),
       "utf-8",
     );
     expect(content).toMatchSnapshot();
@@ -111,6 +128,15 @@ describe("TypeScript type checking tests", () => {
 
   execSync(
     `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -t '#/$defs/User' -t '#/$defs/Post' -t '#/$defs/Comment'`,
+    {
+      stdio: "pipe",
+      cwd: join(__dirname, ".."),
+    },
+  );
+
+  // Generate anyof-ref-validator (anyOf with $ref - regression test)
+  execSync(
+    `bun run ${cliPath} -s ${join(examplesDir, "anyof-ref-schema.json")} -o ${join(generatedDir, "anyof-ref-validator.ts")} -t '#/$defs/Container' -t '#/$defs/NestedAnyOf'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -163,6 +189,15 @@ describe("Runtime validation tests", () => {
 
   execSync(
     `bun run ${cliPath} -s ${join(examplesDir, "multi-schema.json")} -o ${join(generatedDir, "multi-types.ts")} -t '#/$defs/User' -t '#/$defs/Post' -t '#/$defs/Comment'`,
+    {
+      stdio: "pipe",
+      cwd: join(__dirname, ".."),
+    },
+  );
+
+  // Generate anyof-ref-validator (anyOf with $ref - regression test)
+  execSync(
+    `bun run ${cliPath} -s ${join(examplesDir, "anyof-ref-schema.json")} -o ${join(generatedDir, "anyof-ref-validator.ts")} -t '#/$defs/Container' -t '#/$defs/NestedAnyOf'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -1366,6 +1401,162 @@ describe("Runtime validation tests", () => {
         // Should have only 1 issue due to abortEarly
         expect(resultEarly.issues.length).toBe(1);
       }
+    });
+  });
+
+  // Regression test: anyOf with $ref should work correctly
+  // This tests the fix for the bug where .issues was incorrectly replaced with ._tempIssues
+  describe("anyOf with $ref validator (regression test)", () => {
+    let validateContainer: (value: unknown) => ValidationResult<unknown>;
+    let validateNestedAnyOf: (value: unknown) => ValidationResult<unknown>;
+
+    test("setup", async () => {
+      const anyofRefValidator = await import(
+        join(generatedDir, "anyof-ref-validator.ts")
+      );
+      validateContainer = anyofRefValidator.validateContainer;
+      validateNestedAnyOf = anyofRefValidator.validateNestedAnyOf;
+    });
+
+    test("validates Container with TextItem", () => {
+      const validContainer = {
+        id: "container-1",
+        items: [{ type: "text", content: "Hello world" }],
+      };
+      const result = validateContainer(validContainer);
+      expect(result.success).toBe(true);
+    });
+
+    test("validates Container with ImageItem", () => {
+      const validContainer = {
+        id: "container-2",
+        items: [
+          {
+            type: "image",
+            url: "https://example.com/image.png",
+            alt: "An image",
+          },
+        ],
+      };
+      const result = validateContainer(validContainer);
+      expect(result.success).toBe(true);
+    });
+
+    test("validates Container with LinkItem", () => {
+      const validContainer = {
+        id: "container-3",
+        items: [
+          { type: "link", href: "https://example.com", label: "Click here" },
+        ],
+      };
+      const result = validateContainer(validContainer);
+      expect(result.success).toBe(true);
+    });
+
+    test("validates Container with mixed items", () => {
+      const validContainer = {
+        id: "container-4",
+        items: [
+          { type: "text", content: "Welcome" },
+          { type: "image", url: "https://example.com/logo.png" },
+          {
+            type: "link",
+            href: "https://example.com/about",
+            label: "About us",
+          },
+          { type: "text", content: "Footer text" },
+        ],
+      };
+      const result = validateContainer(validContainer);
+      expect(result.success).toBe(true);
+    });
+
+    test("rejects Container with invalid TextItem (empty content)", () => {
+      const invalidContainer = {
+        id: "container-5",
+        items: [
+          { type: "text", content: "" }, // minLength is 1
+        ],
+      };
+      const result = validateContainer(invalidContainer);
+      expect(result.success).toBe(false);
+    });
+
+    test("rejects Container with invalid ImageItem (bad url)", () => {
+      const invalidContainer = {
+        id: "container-6",
+        items: [
+          { type: "image", url: "not-a-valid-url" }, // pattern is ^https?://
+        ],
+      };
+      const result = validateContainer(invalidContainer);
+      expect(result.success).toBe(false);
+    });
+
+    test("rejects Container with invalid LinkItem (missing label)", () => {
+      const invalidContainer = {
+        id: "container-7",
+        items: [
+          { type: "link", href: "https://example.com" }, // missing required label
+        ],
+      };
+      const result = validateContainer(invalidContainer);
+      expect(result.success).toBe(false);
+    });
+
+    test("rejects Container with unknown item type", () => {
+      const invalidContainer = {
+        id: "container-8",
+        items: [
+          { type: "video", src: "https://example.com/video.mp4" }, // unknown type
+        ],
+      };
+      const result = validateContainer(invalidContainer);
+      expect(result.success).toBe(false);
+    });
+
+    test("validates NestedAnyOf with simple kind", () => {
+      const valid = {
+        value: {
+          kind: "simple",
+          data: "some data",
+        },
+      };
+      const result = validateNestedAnyOf(valid);
+      expect(result.success).toBe(true);
+    });
+
+    test("validates NestedAnyOf with complex kind containing $ref", () => {
+      const valid = {
+        value: {
+          kind: "complex",
+          nested: { type: "text", content: "Nested content" },
+        },
+      };
+      const result = validateNestedAnyOf(valid);
+      expect(result.success).toBe(true);
+    });
+
+    test("rejects NestedAnyOf with invalid nested $ref", () => {
+      const invalid = {
+        value: {
+          kind: "complex",
+          nested: { type: "text", content: "" }, // invalid: content minLength is 1
+        },
+      };
+      const result = validateNestedAnyOf(invalid);
+      expect(result.success).toBe(false);
+    });
+
+    test("rejects NestedAnyOf with wrong nested type", () => {
+      const invalid = {
+        value: {
+          kind: "complex",
+          nested: { type: "image", url: "https://example.com" }, // should be TextItem
+        },
+      };
+      const result = validateNestedAnyOf(invalid);
+      expect(result.success).toBe(false);
     });
   });
 });

@@ -1969,12 +1969,30 @@ function generateUnionTypeChecks(
 }
 
 // Helper function to replace references to "issues" with a different variable
+// Only replaces standalone "issues" identifiers, not property access like ".issues"
 function replaceIssuesReference(
   stmt: ts.Statement,
   newName: string,
 ): ts.Statement {
   const transformer: ts.TransformerFactory<ts.Statement> = (context) => {
     const visit: ts.Visitor = (node) => {
+      // For PropertyAccessExpression, don't replace the "name" part (right side of the dot)
+      // Only visit and potentially replace the "expression" part (left side)
+      if (ts.isPropertyAccessExpression(node)) {
+        const newExpression = ts.visitNode(
+          node.expression,
+          visit,
+        ) as ts.Expression;
+        if (newExpression !== node.expression) {
+          return factory.updatePropertyAccessExpression(
+            node,
+            newExpression,
+            node.name,
+          );
+        }
+        return node;
+      }
+
       if (ts.isIdentifier(node) && node.text === "issues") {
         return factory.createIdentifier(newName);
       }
