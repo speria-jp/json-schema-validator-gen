@@ -59,6 +59,6 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "json-schema-library": "^10.1.2"
+    "json-schema-library": "^11.0.3"
   }
 }
