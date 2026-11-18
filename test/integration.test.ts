@@ -55,6 +55,15 @@ describe("Generated code snapshots", () => {
     },
   );
 
+  // Generate union-abort-early-validator (oneOf/anyOf with abortEarly - regression test)
+  execSync(
+    `bun run ${cliPath} -s ${join(examplesDir, "union-abort-early-schema.json")} -o ${join(generatedDir, "union-abort-early-validator.ts")} -t '#/$defs/OneOfRef' -t '#/$defs/AnyOfRef' -t '#/$defs/OneOfInline' -t '#/$defs/AnyOfInline' -t '#/$defs/NestedUnion'`,
+    {
+      stdio: "pipe",
+      cwd: join(__dirname, ".."),
+    },
+  );
+
   test("user-validator.ts snapshot", async () => {
     const content = await readFile(
       join(generatedDir, "user-validator.ts"),
@@ -90,6 +99,14 @@ describe("Generated code snapshots", () => {
   test("anyof-ref-validator.ts snapshot", async () => {
     const content = await readFile(
       join(generatedDir, "anyof-ref-validator.ts"),
+      "utf-8",
+    );
+    expect(content).toMatchSnapshot();
+  });
+
+  test("union-abort-early-validator.ts snapshot", async () => {
+    const content = await readFile(
+      join(generatedDir, "union-abort-early-validator.ts"),
       "utf-8",
     );
     expect(content).toMatchSnapshot();
@@ -137,6 +154,15 @@ describe("TypeScript type checking tests", () => {
   // Generate anyof-ref-validator (anyOf with $ref - regression test)
   execSync(
     `bun run ${cliPath} -s ${join(examplesDir, "anyof-ref-schema.json")} -o ${join(generatedDir, "anyof-ref-validator.ts")} -t '#/$defs/Container' -t '#/$defs/NestedAnyOf'`,
+    {
+      stdio: "pipe",
+      cwd: join(__dirname, ".."),
+    },
+  );
+
+  // Generate union-abort-early-validator (oneOf/anyOf with abortEarly - regression test)
+  execSync(
+    `bun run ${cliPath} -s ${join(examplesDir, "union-abort-early-schema.json")} -o ${join(generatedDir, "union-abort-early-validator.ts")} -t '#/$defs/OneOfRef' -t '#/$defs/AnyOfRef' -t '#/$defs/OneOfInline' -t '#/$defs/AnyOfInline' -t '#/$defs/NestedUnion'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -198,6 +224,15 @@ describe("Runtime validation tests", () => {
   // Generate anyof-ref-validator (anyOf with $ref - regression test)
   execSync(
     `bun run ${cliPath} -s ${join(examplesDir, "anyof-ref-schema.json")} -o ${join(generatedDir, "anyof-ref-validator.ts")} -t '#/$defs/Container' -t '#/$defs/NestedAnyOf'`,
+    {
+      stdio: "pipe",
+      cwd: join(__dirname, ".."),
+    },
+  );
+
+  // Generate union-abort-early-validator (oneOf/anyOf with abortEarly - regression test)
+  execSync(
+    `bun run ${cliPath} -s ${join(examplesDir, "union-abort-early-schema.json")} -o ${join(generatedDir, "union-abort-early-validator.ts")} -t '#/$defs/OneOfRef' -t '#/$defs/AnyOfRef' -t '#/$defs/OneOfInline' -t '#/$defs/AnyOfInline' -t '#/$defs/NestedUnion'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -1557,6 +1592,190 @@ describe("Runtime validation tests", () => {
       };
       const result = validateNestedAnyOf(invalid);
       expect(result.success).toBe(false);
+    });
+  });
+
+  // Regression test: with abortEarly, a oneOf/anyOf candidate that stopped
+  // early used to return its failure object from the IIFE, which is truthy and
+  // was counted as a match (oneOf rejected valid data, anyOf accepted invalid data).
+  describe("oneOf/anyOf with abortEarly (regression test)", () => {
+    type Validator = (
+      value: unknown,
+      options?: { abortEarly?: boolean },
+    ) => ValidationResult<unknown>;
+
+    type Case = { name: string; value: unknown };
+
+    const generated = import(
+      join(generatedDir, "union-abort-early-validator.ts")
+    );
+
+    const suites: {
+      validator: string;
+      valid: Case[];
+      invalid: Case[];
+    }[] = [
+      {
+        validator: "validateOneOfRef",
+        valid: [
+          { name: "matches only $ref A", value: { type: "a", x: "s" } },
+          { name: "matches only $ref B", value: { type: "b", y: 1 } },
+        ],
+        invalid: [
+          { name: "matches no candidate (unknown type)", value: { type: "c" } },
+          { name: "matches no candidate (missing x)", value: { type: "a" } },
+          { name: "matches no candidate (not object)", value: "a" },
+          { name: "matches no candidate (null)", value: null },
+        ],
+      },
+      {
+        validator: "validateAnyOfRef",
+        valid: [
+          { name: "matches $ref A", value: { type: "a", x: "s" } },
+          { name: "matches $ref B", value: { type: "b", y: 1 } },
+        ],
+        invalid: [
+          { name: "matches no candidate (unknown type)", value: { type: "c" } },
+          {
+            name: "matches no candidate (wrong x)",
+            value: { type: "a", x: 1 },
+          },
+          { name: "matches no candidate (null)", value: null },
+        ],
+      },
+      {
+        validator: "validateOneOfInline",
+        valid: [
+          {
+            name: "matches only the first inline candidate",
+            value: { kind: "num", n: -1 },
+          },
+          { name: "matches only the second inline candidate", value: { n: 1 } },
+        ],
+        invalid: [
+          { name: "matches no candidate (wrong n)", value: { n: "x" } },
+          { name: "matches no candidate (missing n)", value: { kind: "num" } },
+          { name: "matches no candidate (empty)", value: {} },
+          { name: "matches two candidates", value: { kind: "num", n: 1 } },
+        ],
+      },
+      {
+        validator: "validateAnyOfInline",
+        valid: [
+          {
+            name: "matches the first inline candidate",
+            value: { kind: "num", n: -1 },
+          },
+          { name: "matches the second inline candidate", value: { n: 1 } },
+          { name: "matches both candidates", value: { kind: "num", n: 1 } },
+        ],
+        invalid: [
+          { name: "matches no candidate (wrong n)", value: { n: "x" } },
+          { name: "matches no candidate (n below minimum)", value: { n: -1 } },
+          { name: "matches no candidate (empty)", value: {} },
+        ],
+      },
+      {
+        validator: "validateNestedUnion",
+        valid: [
+          {
+            name: "oneOf > object > anyOf: matches the first inner candidate",
+            value: { kind: "wrap", inner: { t: "s", v: "x" } },
+          },
+          {
+            name: "oneOf > object > anyOf: matches the second inner candidate",
+            value: { kind: "wrap", inner: { t: "n", v: 1 } },
+          },
+          {
+            name: "oneOf > object > oneOf: matches exactly one inner candidate",
+            value: { kind: "pair", inner: { v: -1 } },
+          },
+          {
+            name: "oneOf > object > array items oneOf: all items match",
+            value: {
+              kind: "list",
+              items: [
+                { type: "a", x: "s" },
+                { type: "b", y: 2 },
+              ],
+            },
+          },
+          {
+            name: "oneOf > object > array items oneOf: empty array",
+            value: { kind: "list", items: [] },
+          },
+        ],
+        invalid: [
+          {
+            name: "oneOf > object > anyOf: matches no inner candidate",
+            value: { kind: "wrap", inner: { t: "s", v: 1 } },
+          },
+          {
+            name: "oneOf > object > anyOf: unknown inner discriminator",
+            value: { kind: "wrap", inner: { t: "z" } },
+          },
+          {
+            name: "oneOf > object > oneOf: matches two inner candidates",
+            value: { kind: "pair", inner: { v: 1 } },
+          },
+          {
+            name: "oneOf > object > oneOf: matches no inner candidate",
+            value: { kind: "pair", inner: { v: "x" } },
+          },
+          {
+            name: "oneOf > object > array items oneOf: one item matches nothing",
+            value: {
+              kind: "list",
+              items: [{ type: "a", x: "s" }, { type: "c" }],
+            },
+          },
+          { name: "matches no outer candidate", value: { kind: "other" } },
+        ],
+      },
+    ];
+
+    for (const abortEarly of [false, true]) {
+      describe(`abortEarly: ${abortEarly}`, () => {
+        for (const suite of suites) {
+          describe(suite.validator, () => {
+            const getValidator = async (): Promise<Validator> =>
+              (await generated)[suite.validator];
+
+            for (const c of suite.valid) {
+              test(`accepts: ${c.name}`, async () => {
+                const validate = await getValidator();
+                const result = validate(c.value, { abortEarly });
+                expect(result).toEqual({ success: true, data: c.value });
+              });
+            }
+
+            for (const c of suite.invalid) {
+              test(`rejects: ${c.name}`, async () => {
+                const validate = await getValidator();
+                const result = validate(c.value, { abortEarly });
+                expect(result.success).toBe(false);
+                if (!result.success) {
+                  expect(result.issues.length).toBeGreaterThanOrEqual(1);
+                }
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // unsafeValidate* always runs with abortEarly: true
+    test("unsafeValidateOneOfRef accepts data matching exactly one candidate", async () => {
+      const { unsafeValidateOneOfRef } = await generated;
+      expect(unsafeValidateOneOfRef({ type: "a", x: "s" })).toEqual({
+        type: "a",
+        x: "s",
+      });
+    });
+
+    test("unsafeValidateAnyOfRef throws for data matching no candidate", async () => {
+      const { unsafeValidateAnyOfRef } = await generated;
+      expect(() => unsafeValidateAnyOfRef({ type: "c" })).toThrow();
     });
   });
 });

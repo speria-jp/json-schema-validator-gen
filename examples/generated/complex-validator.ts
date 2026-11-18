@@ -342,47 +342,47 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                 if (!(typeof value.shippingMethod === "object" && value.shippingMethod !== null && !Array.isArray(value.shippingMethod))) {
                     _invalidType(_tempIssues, ["shippingMethod"], "object", value.shippingMethod);
                     if (abortEarly)
-                        return { success: false, _tempIssues };
+                        return false;
                 }
                 else {
                     if (!("type" in value.shippingMethod)) {
                         _missingKey(_tempIssues, ["shippingMethod"], "type");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if (!("estimatedDays" in value.shippingMethod)) {
                         _missingKey(_tempIssues, ["shippingMethod"], "estimatedDays");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if ("type" in value.shippingMethod) {
                         if (value.shippingMethod.type !== "standard") {
                             _invalidValue(_tempIssues, ["shippingMethod", "type"], "\"standard\"", JSON.stringify(value.shippingMethod.type));
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                     }
                     if ("estimatedDays" in value.shippingMethod) {
                         if (!(typeof value.shippingMethod.estimatedDays === "number")) {
                             _invalidType(_tempIssues, ["shippingMethod", "estimatedDays"], "integer", value.shippingMethod.estimatedDays);
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                         else {
                             if (!Number.isInteger(value.shippingMethod.estimatedDays)) {
                                 _notInteger(_tempIssues, ["shippingMethod", "estimatedDays"], value.shippingMethod.estimatedDays);
                                 if (abortEarly)
-                                    return { success: false, _tempIssues };
+                                    return false;
                             }
                             if (value.shippingMethod.estimatedDays < 3) {
                                 _tooSmall(_tempIssues, ["shippingMethod", "estimatedDays"], "number >= 3", String(value.shippingMethod.estimatedDays));
                                 if (abortEarly)
-                                    return { success: false, _tempIssues };
+                                    return false;
                             }
                             if (value.shippingMethod.estimatedDays > 7) {
                                 _tooBig(_tempIssues, ["shippingMethod", "estimatedDays"], "number <= 7", String(value.shippingMethod.estimatedDays));
                                 if (abortEarly)
-                                    return { success: false, _tempIssues };
+                                    return false;
                             }
                         }
                     }
@@ -396,37 +396,37 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                 if (!(typeof value.shippingMethod === "object" && value.shippingMethod !== null && !Array.isArray(value.shippingMethod))) {
                     _invalidType(_tempIssues, ["shippingMethod"], "object", value.shippingMethod);
                     if (abortEarly)
-                        return { success: false, _tempIssues };
+                        return false;
                 }
                 else {
                     if (!("type" in value.shippingMethod)) {
                         _missingKey(_tempIssues, ["shippingMethod"], "type");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if (!("guaranteedDate" in value.shippingMethod)) {
                         _missingKey(_tempIssues, ["shippingMethod"], "guaranteedDate");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if ("type" in value.shippingMethod) {
                         if (value.shippingMethod.type !== "express") {
                             _invalidValue(_tempIssues, ["shippingMethod", "type"], "\"express\"", JSON.stringify(value.shippingMethod.type));
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                     }
                     if ("guaranteedDate" in value.shippingMethod) {
                         if (!(typeof value.shippingMethod.guaranteedDate === "string")) {
                             _invalidType(_tempIssues, ["shippingMethod", "guaranteedDate"], "string", value.shippingMethod.guaranteedDate);
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                         else {
                             if (!/^\d{4}-\d{2}-\d{2}$/.test(value.shippingMethod.guaranteedDate)) {
                                 _invalidString(_tempIssues, ["shippingMethod", "guaranteedDate"], "string matching pattern /^\\d{4}-\\d{2}-\\d{2}$/", value.shippingMethod.guaranteedDate);
                                 if (abortEarly)
-                                    return { success: false, _tempIssues };
+                                    return false;
                             }
                         }
                     }
@@ -448,42 +448,42 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                 if (!(typeof value.paymentOptions === "object" && value.paymentOptions !== null && !Array.isArray(value.paymentOptions))) {
                     _invalidType(_tempIssues, ["paymentOptions"], "object", value.paymentOptions);
                     if (abortEarly)
-                        return { success: false, _tempIssues };
+                        return false;
                 }
                 else {
                     if (!("creditCard" in value.paymentOptions)) {
                         _missingKey(_tempIssues, ["paymentOptions"], "creditCard");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if ("creditCard" in value.paymentOptions) {
                         if (!(typeof value.paymentOptions.creditCard === "object" && value.paymentOptions.creditCard !== null && !Array.isArray(value.paymentOptions.creditCard))) {
                             _invalidType(_tempIssues, ["paymentOptions", "creditCard"], "object", value.paymentOptions.creditCard);
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                         else {
                             if (!("lastFourDigits" in value.paymentOptions.creditCard)) {
                                 _missingKey(_tempIssues, ["paymentOptions", "creditCard"], "lastFourDigits");
                                 if (abortEarly)
-                                    return { success: false, _tempIssues };
+                                    return false;
                             }
                             if (!("brand" in value.paymentOptions.creditCard)) {
                                 _missingKey(_tempIssues, ["paymentOptions", "creditCard"], "brand");
                                 if (abortEarly)
-                                    return { success: false, _tempIssues };
+                                    return false;
                             }
                             if ("lastFourDigits" in value.paymentOptions.creditCard) {
                                 if (!(typeof value.paymentOptions.creditCard.lastFourDigits === "string")) {
                                     _invalidType(_tempIssues, ["paymentOptions", "creditCard", "lastFourDigits"], "string", value.paymentOptions.creditCard.lastFourDigits);
                                     if (abortEarly)
-                                        return { success: false, _tempIssues };
+                                        return false;
                                 }
                                 else {
                                     if (!/^\d{4}$/.test(value.paymentOptions.creditCard.lastFourDigits)) {
                                         _invalidString(_tempIssues, ["paymentOptions", "creditCard", "lastFourDigits"], "string matching pattern /^\\d{4}$/", value.paymentOptions.creditCard.lastFourDigits);
                                         if (abortEarly)
-                                            return { success: false, _tempIssues };
+                                            return false;
                                     }
                                 }
                             }
@@ -491,7 +491,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                 if (!(["visa", "mastercard", "amex"] as unknown[]).includes(value.paymentOptions.creditCard.brand)) {
                                     _invalidValue(_tempIssues, ["paymentOptions", "creditCard", "brand"], "\"visa\" | \"mastercard\" | \"amex\"", JSON.stringify(value.paymentOptions.creditCard.brand));
                                     if (abortEarly)
-                                        return { success: false, _tempIssues };
+                                        return false;
                                 }
                             }
                         }
@@ -506,31 +506,31 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                 if (!(typeof value.paymentOptions === "object" && value.paymentOptions !== null && !Array.isArray(value.paymentOptions))) {
                     _invalidType(_tempIssues, ["paymentOptions"], "object", value.paymentOptions);
                     if (abortEarly)
-                        return { success: false, _tempIssues };
+                        return false;
                 }
                 else {
                     if (!("paypal" in value.paymentOptions)) {
                         _missingKey(_tempIssues, ["paymentOptions"], "paypal");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if ("paypal" in value.paymentOptions) {
                         if (!(typeof value.paymentOptions.paypal === "object" && value.paymentOptions.paypal !== null && !Array.isArray(value.paymentOptions.paypal))) {
                             _invalidType(_tempIssues, ["paymentOptions", "paypal"], "object", value.paymentOptions.paypal);
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                         else {
                             if (!("email" in value.paymentOptions.paypal)) {
                                 _missingKey(_tempIssues, ["paymentOptions", "paypal"], "email");
                                 if (abortEarly)
-                                    return { success: false, _tempIssues };
+                                    return false;
                             }
                             if ("email" in value.paymentOptions.paypal) {
                                 if (!(typeof value.paymentOptions.paypal.email === "string")) {
                                     _invalidType(_tempIssues, ["paymentOptions", "paypal", "email"], "string", value.paymentOptions.paypal.email);
                                     if (abortEarly)
-                                        return { success: false, _tempIssues };
+                                        return false;
                                 }
                             }
                         }
@@ -545,37 +545,37 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                 if (!(typeof value.paymentOptions === "object" && value.paymentOptions !== null && !Array.isArray(value.paymentOptions))) {
                     _invalidType(_tempIssues, ["paymentOptions"], "object", value.paymentOptions);
                     if (abortEarly)
-                        return { success: false, _tempIssues };
+                        return false;
                 }
                 else {
                     if (!("bankTransfer" in value.paymentOptions)) {
                         _missingKey(_tempIssues, ["paymentOptions"], "bankTransfer");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if ("bankTransfer" in value.paymentOptions) {
                         if (!(typeof value.paymentOptions.bankTransfer === "object" && value.paymentOptions.bankTransfer !== null && !Array.isArray(value.paymentOptions.bankTransfer))) {
                             _invalidType(_tempIssues, ["paymentOptions", "bankTransfer"], "object", value.paymentOptions.bankTransfer);
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                         else {
                             if (!("accountNumber" in value.paymentOptions.bankTransfer)) {
                                 _missingKey(_tempIssues, ["paymentOptions", "bankTransfer"], "accountNumber");
                                 if (abortEarly)
-                                    return { success: false, _tempIssues };
+                                    return false;
                             }
                             if ("accountNumber" in value.paymentOptions.bankTransfer) {
                                 if (!(typeof value.paymentOptions.bankTransfer.accountNumber === "string")) {
                                     _invalidType(_tempIssues, ["paymentOptions", "bankTransfer", "accountNumber"], "string", value.paymentOptions.bankTransfer.accountNumber);
                                     if (abortEarly)
-                                        return { success: false, _tempIssues };
+                                        return false;
                                 }
                                 else {
                                     if (value.paymentOptions.bankTransfer.accountNumber.length < 10) {
                                         _tooSmall(_tempIssues, ["paymentOptions", "bankTransfer", "accountNumber"], "string with length >= 10", `string with length ${value.paymentOptions.bankTransfer.accountNumber.length}`);
                                         if (abortEarly)
-                                            return { success: false, _tempIssues };
+                                            return false;
                                     }
                                 }
                             }
@@ -630,7 +630,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                 if (!(typeof value.features[i9].values === "string")) {
                                     _invalidType(_tempIssues, ["features", i9, "values"], "string", value.features[i9].values);
                                     if (abortEarly)
-                                        return { success: false, _tempIssues };
+                                        return false;
                                 }
                                 return _tempIssues.length === 0;
                             })()) {
@@ -641,14 +641,14 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                 if (!Array.isArray(value.features[i9].values)) {
                                     _invalidType(_tempIssues, ["features", i9, "values"], "array", value.features[i9].values);
                                     if (abortEarly)
-                                        return { success: false, _tempIssues };
+                                        return false;
                                 }
                                 else {
                                     for (let i11 = 0; i11 < value.features[i9].values.length; i11++) {
                                         if (!(typeof value.features[i9].values[i11] === "string")) {
                                             _invalidType(_tempIssues, ["features", i9, "values", i11], "string", value.features[i9].values[i11]);
                                             if (abortEarly)
-                                                return { success: false, _tempIssues };
+                                                return false;
                                         }
                                     }
                                 }
@@ -661,7 +661,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                 if (!Array.isArray(value.features[i9].values)) {
                                     _invalidType(_tempIssues, ["features", i9, "values"], "array", value.features[i9].values);
                                     if (abortEarly)
-                                        return { success: false, _tempIssues };
+                                        return false;
                                 }
                                 else {
                                     for (let i12 = 0; i12 < value.features[i9].values.length; i12++) {
@@ -671,7 +671,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                             if (!(typeof value.features[i9].values[i12] === "string")) {
                                                 _invalidType(_tempIssues, ["features", i9, "values", i12], "string", value.features[i9].values[i12]);
                                                 if (abortEarly)
-                                                    return { success: false, _tempIssues };
+                                                    return false;
                                             }
                                             return _tempIssues.length === 0;
                                         })()) {
@@ -682,7 +682,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                             if (!(typeof value.features[i9].values[i12] === "number")) {
                                                 _invalidType(_tempIssues, ["features", i9, "values", i12], "number", value.features[i9].values[i12]);
                                                 if (abortEarly)
-                                                    return { success: false, _tempIssues };
+                                                    return false;
                                             }
                                             return _tempIssues.length === 0;
                                         })()) {
@@ -691,7 +691,7 @@ export function validateComplex(value: unknown, options?: ValidationOptions): Va
                                         if (!_anyOfMatched13) {
                                             _tempIssues.push({ code: "invalid_type", path: ["features", i9, "values", i12], message: `Expected ${"value matching at least one schema"}, received ${"value matching no schemas"}`, expected: "value matching at least one schema", received: "value matching no schemas" });
                                             if (abortEarly)
-                                                return { success: false, _tempIssues };
+                                                return false;
                                         }
                                     }
                                 }

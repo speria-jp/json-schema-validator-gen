@@ -1,0 +1,130 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$defs": {
+    "A": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "const": "a" },
+        "x": { "type": "string" }
+      },
+      "required": ["type", "x"]
+    },
+    "B": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "const": "b" },
+        "y": { "type": "number" }
+      },
+      "required": ["type", "y"]
+    },
+    "OneOfRef": {
+      "oneOf": [{ "$ref": "#/$defs/A" }, { "$ref": "#/$defs/B" }]
+    },
+    "AnyOfRef": {
+      "anyOf": [{ "$ref": "#/$defs/A" }, { "$ref": "#/$defs/B" }]
+    },
+    "OneOfInline": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "const": "num" },
+            "n": { "type": "number" }
+          },
+          "required": ["kind", "n"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "n": { "type": "number", "minimum": 0 }
+          },
+          "required": ["n"]
+        }
+      ]
+    },
+    "AnyOfInline": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "const": "num" },
+            "n": { "type": "number" }
+          },
+          "required": ["kind", "n"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "n": { "type": "number", "minimum": 0 }
+          },
+          "required": ["n"]
+        }
+      ]
+    },
+    "NestedUnion": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "const": "wrap" },
+            "inner": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "t": { "type": "string", "const": "s" },
+                    "v": { "type": "string" }
+                  },
+                  "required": ["t", "v"]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "t": { "type": "string", "const": "n" },
+                    "v": { "type": "number" }
+                  },
+                  "required": ["t", "v"]
+                }
+              ]
+            }
+          },
+          "required": ["kind", "inner"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "const": "pair" },
+            "inner": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": { "v": { "type": "number" } },
+                  "required": ["v"]
+                },
+                {
+                  "type": "object",
+                  "properties": { "v": { "type": "number", "minimum": 0 } },
+                  "required": ["v"]
+                }
+              ]
+            }
+          },
+          "required": ["kind", "inner"]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "type": "string", "const": "list" },
+            "items": {
+              "type": "array",
+              "items": {
+                "oneOf": [{ "$ref": "#/$defs/A" }, { "$ref": "#/$defs/B" }]
+              }
+            }
+          },
+          "required": ["kind", "items"]
+        }
+      ]
+    }
+  }
+}

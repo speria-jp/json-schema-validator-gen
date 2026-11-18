@@ -162,7 +162,7 @@ export function validateContainer(value: unknown, options?: ValidationOptions): 
                                 _tempIssues.push({ ..._issue4, path: [...["items", i1], ..._issue4.path] });
                             }
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                         return _tempIssues.length === 0;
                     })()) {
@@ -176,7 +176,7 @@ export function validateContainer(value: unknown, options?: ValidationOptions): 
                                 _tempIssues.push({ ..._issue6, path: [...["items", i1], ..._issue6.path] });
                             }
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                         return _tempIssues.length === 0;
                     })()) {
@@ -190,7 +190,7 @@ export function validateContainer(value: unknown, options?: ValidationOptions): 
                                 _tempIssues.push({ ..._issue8, path: [...["items", i1], ..._issue8.path] });
                             }
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                         return _tempIssues.length === 0;
                     })()) {
@@ -438,38 +438,38 @@ export function validateNestedAnyOf(value: unknown, options?: ValidationOptions)
                 if (!(typeof value.value === "object" && value.value !== null && !Array.isArray(value.value))) {
                     _invalidType(_tempIssues, ["value"], "object", value.value);
                     if (abortEarly)
-                        return { success: false, _tempIssues };
+                        return false;
                 }
                 else {
                     if (!("kind" in value.value)) {
                         _missingKey(_tempIssues, ["value"], "kind");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if (!("data" in value.value)) {
                         _missingKey(_tempIssues, ["value"], "data");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if ("kind" in value.value) {
                         if (value.value.kind !== "simple") {
                             _invalidValue(_tempIssues, ["value", "kind"], "\"simple\"", JSON.stringify(value.value.kind));
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                     }
                     if ("data" in value.value) {
                         if (!(typeof value.value.data === "string")) {
                             _invalidType(_tempIssues, ["value", "data"], "string", value.value.data);
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                     }
                     for (const key2 in value.value) {
                         if (!["kind", "data"].includes(key2)) {
                             _unrecognizedKey(_tempIssues, ["value", key2], `one of known properties (${["kind", "data"].join(", ")})`, key2);
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                     }
                 }
@@ -482,24 +482,24 @@ export function validateNestedAnyOf(value: unknown, options?: ValidationOptions)
                 if (!(typeof value.value === "object" && value.value !== null && !Array.isArray(value.value))) {
                     _invalidType(_tempIssues, ["value"], "object", value.value);
                     if (abortEarly)
-                        return { success: false, _tempIssues };
+                        return false;
                 }
                 else {
                     if (!("kind" in value.value)) {
                         _missingKey(_tempIssues, ["value"], "kind");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if (!("nested" in value.value)) {
                         _missingKey(_tempIssues, ["value"], "nested");
                         if (abortEarly)
-                            return { success: false, _tempIssues };
+                            return false;
                     }
                     if ("kind" in value.value) {
                         if (value.value.kind !== "complex") {
                             _invalidValue(_tempIssues, ["value", "kind"], "\"complex\"", JSON.stringify(value.value.kind));
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                     }
                     if ("nested" in value.value) {
@@ -509,14 +509,14 @@ export function validateNestedAnyOf(value: unknown, options?: ValidationOptions)
                                 _tempIssues.push({ ..._issue4, path: [...["value", "nested"], ..._issue4.path] });
                             }
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                     }
                     for (const key5 in value.value) {
                         if (!["kind", "nested"].includes(key5)) {
                             _unrecognizedKey(_tempIssues, ["value", key5], `one of known properties (${["kind", "nested"].join(", ")})`, key5);
                             if (abortEarly)
-                                return { success: false, _tempIssues };
+                                return false;
                         }
                     }
                 }
