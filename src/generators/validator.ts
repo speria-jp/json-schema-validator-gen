@@ -1724,9 +1724,7 @@ function generateOneOfChecks(
           ts.NodeFlags.Const,
         ),
       ),
-      ...tempStatements.map((stmt) =>
-        replaceIssuesReference(stmt, "_tempIssues"),
-      ),
+      ...tempStatements.map((stmt) => rewriteForCandidate(stmt, "_tempIssues")),
       factory.createReturnStatement(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(
@@ -1853,9 +1851,7 @@ function generateAnyOfChecks(
           ts.NodeFlags.Const,
         ),
       ),
-      ...tempStatements.map((stmt) =>
-        replaceIssuesReference(stmt, "_tempIssues"),
-      ),
+      ...tempStatements.map((stmt) => rewriteForCandidate(stmt, "_tempIssues")),
       factory.createReturnStatement(
         factory.createBinaryExpression(
           factory.createPropertyAccessExpression(
@@ -1968,14 +1964,29 @@ function generateUnionTypeChecks(
   }
 }
 
-// Helper function to replace references to "issues" with a different variable
-// Only replaces standalone "issues" identifiers, not property access like ".issues"
-function replaceIssuesReference(
+// Rewrite statements generated for a oneOf/anyOf candidate so that they can run
+// inside the candidate's IIFE, which must always return a boolean (did it match?).
+// - Standalone "issues" identifiers are renamed to `newName` (not property
+//   access like ".issues").
+// - Every `return ...` (the abortEarly early exit) becomes `return false`: a
+//   candidate that stopped early did not match. Returning the failure object
+//   instead would be truthy and counted as a match.
+// Nested functions (inner candidates' IIFEs) are left untouched: they were
+// already rewritten for their own scope, and their returns belong to them.
+function rewriteForCandidate(
   stmt: ts.Statement,
   newName: string,
 ): ts.Statement {
   const transformer: ts.TransformerFactory<ts.Statement> = (context) => {
     const visit: ts.Visitor = (node) => {
+      if (ts.isFunctionLike(node)) {
+        return node;
+      }
+
+      if (ts.isReturnStatement(node)) {
+        return factory.createReturnStatement(factory.createFalse());
+      }
+
       // For PropertyAccessExpression, don't replace the "name" part (right side of the dot)
       // Only visit and potentially replace the "expression" part (left side)
       if (ts.isPropertyAccessExpression(node)) {
