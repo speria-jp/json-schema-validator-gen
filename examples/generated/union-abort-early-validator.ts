@@ -138,6 +138,14 @@ export type NestedUnion = {
 };
 
 
+export type StrictOrTuple = {
+    a: string;
+} | [
+    string,
+    number
+];
+
+
 export function validateOneOfRef(value: unknown, options?: ValidationOptions): ValidationResult<OneOfRef> {
     const issues: ValidationIssue[] = [];
     const abortEarly = options?.abortEarly ?? false;
@@ -806,6 +814,89 @@ export function unsafeValidateNestedUnion(value: unknown): NestedUnion {
     const result = validateNestedUnion(value, { abortEarly: true });
     if (!result.success) {
         throw new Error("Validation failed: value is not NestedUnion");
+    }
+    return result.data;
+}
+
+
+export function validateStrictOrTuple(value: unknown, options?: ValidationOptions): ValidationResult<StrictOrTuple> {
+    const issues: ValidationIssue[] = [];
+    const abortEarly = options?.abortEarly ?? false;
+    let _matchCount1 = 0;
+    if ((() => {
+        const _tempIssues: ValidationIssue[] = [];
+        if (!(typeof value === "object" && value !== null && !Array.isArray(value))) {
+            _invalidType(_tempIssues, [], "object", value);
+            if (abortEarly)
+                return false;
+        }
+        else {
+            if (!("a" in value)) {
+                _missingKey(_tempIssues, [], "a");
+                if (abortEarly)
+                    return false;
+            }
+            if ("a" in value) {
+                if (!(typeof value.a === "string")) {
+                    _invalidType(_tempIssues, ["a"], "string", value.a);
+                    if (abortEarly)
+                        return false;
+                }
+            }
+            for (const key3 in value) {
+                if (!["a"].includes(key3)) {
+                    _unrecognizedKey(_tempIssues, [key3], `one of known properties (${["a"].join(", ")})`, key3);
+                    if (abortEarly)
+                        return false;
+                }
+            }
+        }
+        return _tempIssues.length === 0;
+    })()) {
+        _matchCount1++;
+    }
+    if ((() => {
+        const _tempIssues: ValidationIssue[] = [];
+        if (!Array.isArray(value)) {
+            _invalidType(_tempIssues, [], "array", value);
+            if (abortEarly)
+                return false;
+        }
+        else {
+            if (value.length !== 2) {
+                _tempIssues.push({ code: "invalid_type", path: [], message: `Expected ${"tuple with 2 elements"}, received ${`array with ${value.length} elements`}`, expected: "tuple with 2 elements", received: `array with ${value.length} elements` });
+                if (abortEarly)
+                    return false;
+            }
+            if (!(typeof value[0] === "string")) {
+                _invalidType(_tempIssues, [0], "string", value[0]);
+                if (abortEarly)
+                    return false;
+            }
+            if (!(typeof value[1] === "number")) {
+                _invalidType(_tempIssues, [1], "number", value[1]);
+                if (abortEarly)
+                    return false;
+            }
+        }
+        return _tempIssues.length === 0;
+    })()) {
+        _matchCount1++;
+    }
+    if (_matchCount1 !== 1) {
+        issues.push({ code: "invalid_type", path: [], message: `Expected ${"value matching exactly one schema"}, received ${`value matching ${_matchCount1} schemas`}`, expected: "value matching exactly one schema", received: `value matching ${_matchCount1} schemas` });
+        if (abortEarly)
+            return { success: false, issues };
+    }
+    if (issues.length > 0) {
+        return { success: false, issues };
+    }
+    return { success: true, data: value as StrictOrTuple };
+}
+export function unsafeValidateStrictOrTuple(value: unknown): StrictOrTuple {
+    const result = validateStrictOrTuple(value, { abortEarly: true });
+    if (!result.success) {
+        throw new Error("Validation failed: value is not StrictOrTuple");
     }
     return result.data;
 }

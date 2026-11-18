@@ -57,7 +57,7 @@ describe("Generated code snapshots", () => {
 
   // Generate union-abort-early-validator (oneOf/anyOf with abortEarly - regression test)
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "union-abort-early-schema.json")} -o ${join(generatedDir, "union-abort-early-validator.ts")} -t '#/$defs/OneOfRef' -t '#/$defs/AnyOfRef' -t '#/$defs/OneOfInline' -t '#/$defs/AnyOfInline' -t '#/$defs/NestedUnion'`,
+    `bun run ${cliPath} -s ${join(examplesDir, "union-abort-early-schema.json")} -o ${join(generatedDir, "union-abort-early-validator.ts")} -t '#/$defs/OneOfRef' -t '#/$defs/AnyOfRef' -t '#/$defs/OneOfInline' -t '#/$defs/AnyOfInline' -t '#/$defs/NestedUnion' -t '#/$defs/StrictOrTuple'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -162,7 +162,7 @@ describe("TypeScript type checking tests", () => {
 
   // Generate union-abort-early-validator (oneOf/anyOf with abortEarly - regression test)
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "union-abort-early-schema.json")} -o ${join(generatedDir, "union-abort-early-validator.ts")} -t '#/$defs/OneOfRef' -t '#/$defs/AnyOfRef' -t '#/$defs/OneOfInline' -t '#/$defs/AnyOfInline' -t '#/$defs/NestedUnion'`,
+    `bun run ${cliPath} -s ${join(examplesDir, "union-abort-early-schema.json")} -o ${join(generatedDir, "union-abort-early-validator.ts")} -t '#/$defs/OneOfRef' -t '#/$defs/AnyOfRef' -t '#/$defs/OneOfInline' -t '#/$defs/AnyOfInline' -t '#/$defs/NestedUnion' -t '#/$defs/StrictOrTuple'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -232,7 +232,7 @@ describe("Runtime validation tests", () => {
 
   // Generate union-abort-early-validator (oneOf/anyOf with abortEarly - regression test)
   execSync(
-    `bun run ${cliPath} -s ${join(examplesDir, "union-abort-early-schema.json")} -o ${join(generatedDir, "union-abort-early-validator.ts")} -t '#/$defs/OneOfRef' -t '#/$defs/AnyOfRef' -t '#/$defs/OneOfInline' -t '#/$defs/AnyOfInline' -t '#/$defs/NestedUnion'`,
+    `bun run ${cliPath} -s ${join(examplesDir, "union-abort-early-schema.json")} -o ${join(generatedDir, "union-abort-early-validator.ts")} -t '#/$defs/OneOfRef' -t '#/$defs/AnyOfRef' -t '#/$defs/OneOfInline' -t '#/$defs/AnyOfInline' -t '#/$defs/NestedUnion' -t '#/$defs/StrictOrTuple'`,
     {
       stdio: "pipe",
       cwd: join(__dirname, ".."),
@@ -1673,6 +1673,22 @@ describe("Runtime validation tests", () => {
           { name: "matches no candidate (wrong n)", value: { n: "x" } },
           { name: "matches no candidate (n below minimum)", value: { n: -1 } },
           { name: "matches no candidate (empty)", value: {} },
+        ],
+      },
+      {
+        validator: "validateStrictOrTuple",
+        valid: [
+          { name: "matches the strict object candidate", value: { a: "x" } },
+          { name: "matches the tuple candidate", value: ["x", 1] },
+        ],
+        invalid: [
+          {
+            name: "violates additionalProperties: false",
+            value: { a: "x", extra: 1 },
+          },
+          { name: "violates a tuple element type", value: ["x", "y"] },
+          { name: "violates tuple length", value: ["x"] },
+          { name: "matches no candidate (boolean)", value: true },
         ],
       },
       {

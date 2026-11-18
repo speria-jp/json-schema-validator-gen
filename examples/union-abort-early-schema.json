@@ -125,6 +125,22 @@
           "required": ["kind", "items"]
         }
       ]
+    },
+    "StrictOrTuple": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": { "a": { "type": "string" } },
+          "required": ["a"],
+          "additionalProperties": false
+        },
+        {
+          "type": "array",
+          "items": [{ "type": "string" }, { "type": "number" }],
+          "minItems": 2,
+          "maxItems": 2
+        }
+      ]
     }
   }
 }
